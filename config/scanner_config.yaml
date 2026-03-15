@@ -1,0 +1,49 @@
+# AI-Powered OWASP Scanner Configuration
+# ========================================
+# Uses Cisco Foundation-Sec-8B-Instruct Q8_0 GGUF via llama-cli
+# https://huggingface.co/fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF
+#
+# This is the INSTRUCT variant — fine-tuned for following structured
+# instructions, which produces better formatted security analysis
+# compared to the base model.
+#
+# Optimised for Apple Silicon Mac with 18 GB unified memory
+# Memory footprint: ~8-9 GB (Q8_0 quantisation)
+
+# Target file or directory to scan
+target: "."
+
+# Cisco Foundation-Sec-8B-Instruct GGUF model
+hf_repo: "fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF"
+hf_file: "foundation-sec-8b-instruct-q8_0.gguf"
+
+# Model inference settings (optimised for 18 GB Mac)
+ctx_size: 8192 # Increased from 2048 for better context handling, decrease it if you have memory issues (depending on your laptop)
+n_gpu_layers: -1
+threads: 6
+
+# Generation settings
+max_tokens: 1024
+temperature: 0.1
+
+# Output directory for reports
+output_dir: "security-reports"
+
+# Minimum severity to fail the build: INFO, WARNING, ERROR
+severity_threshold: "WARNING"
+
+# Timeout for each LLM call (seconds)
+llm_timeout: 600
+
+# Semgrep ruleset
+semgrep_config: "p/owasp-top-ten"
+
+# Semgrep scan timeout (seconds)
+semgrep_timeout: 300
+
+# Logging
+log_level: "INFO"
+log_file: "security-reports/scanner.log"
+
+# Set to true to run without LLM analysis
+skip_llm: false

@@ -1,0 +1,726 @@
+2026-03-15 18:59:09 [INFO] ============================================================
+2026-03-15 18:59:09 [INFO]    AI-Powered OWASP Top 10 Security Scanner v2.0.0
+2026-03-15 18:59:09 [INFO]    Model: Cisco Foundation-Sec-8B (GGUF via llama-cli)
+2026-03-15 18:59:09 [INFO] ============================================================
+2026-03-15 18:59:09 [INFO]   Target:             ../../Downloads/GCP-Remote-attestation-master/
+2026-03-15 18:59:09 [INFO]   HF Repo:            fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF
+2026-03-15 18:59:09 [INFO]   HF File:            foundation-sec-8b-instruct-q8_0.gguf
+2026-03-15 18:59:09 [INFO]   Context Size:       8192
+2026-03-15 18:59:09 [INFO]   GPU Layers:         -1
+2026-03-15 18:59:09 [INFO]   CPU Threads:        6
+2026-03-15 18:59:09 [INFO]   Max Tokens:         1024
+2026-03-15 18:59:09 [INFO]   Temperature:        0.1
+2026-03-15 18:59:09 [INFO]   Output Directory:   security-reports
+2026-03-15 18:59:09 [INFO]   Severity Threshold: WARNING
+2026-03-15 18:59:09 [INFO]   LLM Timeout:        600s
+2026-03-15 18:59:09 [INFO]   Semgrep Config:     p/owasp-top-ten
+2026-03-15 18:59:09 [INFO]   Semgrep Timeout:    300s
+2026-03-15 18:59:09 [INFO]   LLM Enabled:        True
+2026-03-15 18:59:09 [INFO]   Log Level:          DEBUG
+2026-03-15 18:59:09 [INFO] ============================================================
+2026-03-15 18:59:09 [INFO] Validating environment...
+2026-03-15 18:59:09 [INFO] Platform: Darwin arm64
+2026-03-15 18:59:09 [INFO] System memory: 18.0 GB
+2026-03-15 18:59:09 [INFO] Target '../../Downloads/GCP-Remote-attestation-master/' found.
+2026-03-15 18:59:10 [INFO] Semgrep version: 1.155.0
+2026-03-15 18:59:10 [INFO] llama-cli version: 
+2026-03-15 18:59:10 [INFO] Model: fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF / foundation-sec-8b-instruct-q8_0.gguf
+2026-03-15 18:59:10 [INFO] Context size: 8192
+2026-03-15 18:59:10 [INFO] GPU layers: -1
+2026-03-15 18:59:10 [INFO] CPU threads: 6
+2026-03-15 18:59:10 [INFO] Environment validation passed.
+2026-03-15 18:59:10 [INFO] Running Semgrep scan on '../../Downloads/GCP-Remote-attestation-master/' with config 'p/owasp-top-ten'...
+2026-03-15 18:59:15 [INFO] Semgrep completed with no findings (exit code 0).
+2026-03-15 18:59:15 [INFO] Semgrep results: 17 finding(s), 0 error(s).
+2026-03-15 18:59:15 [DEBUG]   Found: [ERROR] dockerfile.security.missing-user-entrypoint.missing-user-entrypoint at ../../Downloads/GCP-Remote-attestation-master/Dockerfile:26
+2026-03-15 18:59:15 [DEBUG]   Found: [WARNING] go.lang.security.audit.crypto.math_random.math-random-used at ../../Downloads/GCP-Remote-attestation-master/grpc_attestor.go:17
+2026-03-15 18:59:15 [DEBUG]   Found: [WARNING] go.lang.security.audit.crypto.missing-ssl-minversion.missing-ssl-minversion at ../../Downloads/GCP-Remote-attestation-master/grpc_attestor.go:564
+2026-03-15 18:59:15 [DEBUG]   Found: [WARNING] yaml.kubernetes.security.secrets-in-config-file.secrets-in-config-file at ../../Downloads/GCP-Remote-attestation-master/src/app.yaml:3
+2026-03-15 18:59:15 [DEBUG]   Found: [WARNING] yaml.kubernetes.security.secrets-in-config-file.secrets-in-config-file at ../../Downloads/GCP-Remote-attestation-master/src/app.yaml:4
+2026-03-15 18:59:15 [DEBUG]   Found: [WARNING] yaml.kubernetes.security.secrets-in-config-file.secrets-in-config-file at ../../Downloads/GCP-Remote-attestation-master/src/app.yaml:5
+2026-03-15 18:59:15 [DEBUG]   Found: [WARNING] yaml.kubernetes.security.allow-privilege-escalation-no-securitycontext.allow-privilege-escalation-no-securitycontext at ../../Downloads/GCP-Remote-attestation-master/src/app.yaml:39
+2026-03-15 18:59:15 [DEBUG]   Found: [WARNING] go.lang.security.audit.crypto.missing-ssl-minversion.missing-ssl-minversion at ../../Downloads/GCP-Remote-attestation-master/src/client/RestWrapperVerifier/RestWrapperVerifier.go:20
+2026-03-15 18:59:15 [DEBUG]   Found: [WARNING] go.lang.security.audit.crypto.missing-ssl-minversion.missing-ssl-minversion at ../../Downloads/GCP-Remote-attestation-master/src/client/RestWrapperVerifier/RestWrapperVerifier.go:44
+2026-03-15 18:59:15 [DEBUG]   Found: [WARNING] go.lang.security.audit.crypto.missing-ssl-minversion.missing-ssl-minversion at ../../Downloads/GCP-Remote-attestation-master/src/client/RestWrapperVerifier/RestWrapperVerifier.go:68
+2026-03-15 18:59:15 [DEBUG]   Found: [WARNING] go.lang.security.audit.crypto.missing-ssl-minversion.missing-ssl-minversion at ../../Downloads/GCP-Remote-attestation-master/src/client/RestWrapperVerifier/RestWrapperVerifier.go:91
+2026-03-15 18:59:15 [DEBUG]   Found: [WARNING] go.lang.security.audit.crypto.math_random.math-random-used at ../../Downloads/GCP-Remote-attestation-master/src/client/grpc_verifier.go:31
+2026-03-15 18:59:15 [DEBUG]   Found: [WARNING] go.lang.security.audit.crypto.use_of_weak_crypto.use-of-sha1 at ../../Downloads/GCP-Remote-attestation-master/src/client/grpc_verifier.go:382
+2026-03-15 18:59:15 [DEBUG]   Found: [WARNING] yaml.kubernetes.security.secrets-in-config-file.secrets-in-config-file at ../../Downloads/GCP-Remote-attestation-master/src/daemonset.yaml:3
+2026-03-15 18:59:15 [DEBUG]   Found: [WARNING] yaml.kubernetes.security.secrets-in-config-file.secrets-in-config-file at ../../Downloads/GCP-Remote-attestation-master/src/daemonset.yaml:4
+2026-03-15 18:59:15 [DEBUG]   Found: [WARNING] yaml.kubernetes.security.secrets-in-config-file.secrets-in-config-file at ../../Downloads/GCP-Remote-attestation-master/src/daemonset.yaml:5
+2026-03-15 18:59:15 [DEBUG]   Found: [WARNING] yaml.kubernetes.security.allow-privilege-escalation.allow-privilege-escalation at ../../Downloads/GCP-Remote-attestation-master/src/daemonset.yaml:69
+2026-03-15 18:59:15 [INFO] Processing 17 finding(s) with Foundation-Sec-8B via llama-cli...
+2026-03-15 18:59:15 [INFO] Model: fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF / foundation-sec-8b-instruct-q8_0.gguf
+2026-03-15 18:59:15 [INFO] Estimated time: ~510-2040 seconds (depends on hardware)
+2026-03-15 18:59:15 [INFO] Processing finding 1/17...
+2026-03-15 18:59:15 [INFO] Analyzing [ERROR] 'dockerfile.security.missing-user-entrypoint.missing-user-entrypoint' at ../../Downloads/GCP-Remote-attestation-master/Dockerfile:26-26 ...
+2026-03-15 18:59:15 [DEBUG] ======================================================================
+2026-03-15 18:59:15 [DEBUG] LLM PROMPT (Foundation-Sec-8B via llama-cli)
+2026-03-15 18:59:15 [DEBUG] ======================================================================
+2026-03-15 18:59:15 [DEBUG] You are a cybersecurity expert performing a secure code review.
+Your task is to analyze a vulnerability detected by Semgrep and map it to the OWASP Top 10 (2021) framework.
+
+**Rule ID:** dockerfile.security.missing-user-entrypoint.missing-user-entrypoint
+**Semgrep Finding:** By not specifying a USER, a program in the container may run as 'root'. This is a security hazard. If an attacker can control a process running as root, they may have control over the container. Ensure that the last USER in a Dockerfile is a USER other than 'root'.
+
+**Code Snippet:**
+
+      23 | COPY --from=build /go/bin/grpc_attestor /grpc_attestor
+      24 | 
+      25 | 
+>>>   26 | ENTRYPOINT ["/grpc_attestor", "-host=localhost:50051", "--v=10","-alsologtostderr"]
+
+Provide your analysis in the following structured format:
+
+1. **OWASP Category**: Identify the specific OWASP Top 10 (2021) category (e.g., A01:2021 - Broken Access Control). If multiple categories apply, list all.
+2. **CWE Mapping**: Identify the relevant CWE (Common Weakness Enumeration) ID(s).
+3. **CVSS Estimate**: Provide an estimated CVSS v3.1 base score and vector string.
+4. **Severity**: Rate as one of: INFO, WARNING, ERROR.
+5. **Attack Vector**: Describe the specific attack scenario. Include example payloads where applicable.
+6. **Impact**: Describe the potential business and technical impact if exploited, including data confidentiality, integrity, and availability.
+7. **Remediation**: Provide a specific, secure code fix. Show the corrected code.
+8. **Defence in Depth**: Suggest additional security controls beyond the code fix (e.g., WAF rules, input validation layers, security headers).
+9. **References**: List relevant CWE IDs, OWASP links, and Cisco security advisories if applicable.
+2026-03-15 18:59:15 [DEBUG] ======================================================================
+2026-03-15 18:59:15 [DEBUG] Prompt written to temporary file: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt__vii2ecw.txt
+2026-03-15 18:59:15 [DEBUG] Executing: llama-cli --hf-repo fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF --hf-file foundation-sec-8b-instruct-q8_0.gguf -c 8192 -ngl -1 -t 6 -p <prompt>
+2026-03-15 19:00:03 [DEBUG] Temporary prompt file cleaned up: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt__vii2ecw.txt
+2026-03-15 19:00:03 [INFO] Finding 1/17 complete. Status: success
+2026-03-15 19:00:03 [INFO] Processing finding 2/17...
+2026-03-15 19:00:04 [INFO] Analyzing [WARNING] 'go.lang.security.audit.crypto.math_random.math-random-used' at ../../Downloads/GCP-Remote-attestation-master/grpc_attestor.go:17-17 ...
+2026-03-15 19:00:04 [DEBUG] ======================================================================
+2026-03-15 19:00:04 [DEBUG] LLM PROMPT (Foundation-Sec-8B via llama-cli)
+2026-03-15 19:00:04 [DEBUG] ======================================================================
+2026-03-15 19:00:04 [DEBUG] You are a cybersecurity expert performing a secure code review.
+Your task is to analyze a vulnerability detected by Semgrep and map it to the OWASP Top 10 (2021) framework.
+
+**Rule ID:** go.lang.security.audit.crypto.math_random.math-random-used
+**Semgrep Finding:** Do not use `math/rand`. Use `crypto/rand` instead.
+
+**Code Snippet:**
+
+      14 | 	"flag"
+      15 | 	"fmt"
+      16 | 	"io/ioutil"
+>>>   17 | 	mrnd "math/rand"
+      18 | 	"net"
+      19 | 	"os"
+      20 | 	"sync"
+
+Provide your analysis in the following structured format:
+
+1. **OWASP Category**: Identify the specific OWASP Top 10 (2021) category (e.g., A01:2021 - Broken Access Control). If multiple categories apply, list all.
+2. **CWE Mapping**: Identify the relevant CWE (Common Weakness Enumeration) ID(s).
+3. **CVSS Estimate**: Provide an estimated CVSS v3.1 base score and vector string.
+4. **Severity**: Rate as one of: INFO, WARNING, ERROR.
+5. **Attack Vector**: Describe the specific attack scenario. Include example payloads where applicable.
+6. **Impact**: Describe the potential business and technical impact if exploited, including data confidentiality, integrity, and availability.
+7. **Remediation**: Provide a specific, secure code fix. Show the corrected code.
+8. **Defence in Depth**: Suggest additional security controls beyond the code fix (e.g., WAF rules, input validation layers, security headers).
+9. **References**: List relevant CWE IDs, OWASP links, and Cisco security advisories if applicable.
+2026-03-15 19:00:04 [DEBUG] ======================================================================
+2026-03-15 19:00:04 [DEBUG] Prompt written to temporary file: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt_cs8ry_me.txt
+2026-03-15 19:00:04 [DEBUG] Executing: llama-cli --hf-repo fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF --hf-file foundation-sec-8b-instruct-q8_0.gguf -c 8192 -ngl -1 -t 6 -p <prompt>
+2026-03-15 19:00:50 [DEBUG] Temporary prompt file cleaned up: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt_cs8ry_me.txt
+2026-03-15 19:00:50 [INFO] Finding 2/17 complete. Status: success
+2026-03-15 19:00:50 [INFO] Processing finding 3/17...
+2026-03-15 19:00:50 [INFO] Analyzing [WARNING] 'go.lang.security.audit.crypto.missing-ssl-minversion.missing-ssl-minversion' at ../../Downloads/GCP-Remote-attestation-master/grpc_attestor.go:564-567 ...
+2026-03-15 19:00:50 [DEBUG] ======================================================================
+2026-03-15 19:00:50 [DEBUG] LLM PROMPT (Foundation-Sec-8B via llama-cli)
+2026-03-15 19:00:50 [DEBUG] ======================================================================
+2026-03-15 19:00:50 [DEBUG] You are a cybersecurity expert performing a secure code review.
+Your task is to analyze a vulnerability detected by Semgrep and map it to the OWASP Top 10 (2021) framework.
+
+**Rule ID:** go.lang.security.audit.crypto.missing-ssl-minversion.missing-ssl-minversion
+**Semgrep Finding:** `MinVersion` is missing from this TLS configuration.  By default, as of Go 1.22, TLS 1.2 is currently used as the minimum. General purpose web applications should default to TLS 1.3 with all other protocols disabled.  Only where it is known that a web server must support legacy clients with unsupported an insecure browsers (such as Internet Explorer 10), it may be necessary to enable TLS 1.0 to provide support. Add `MinVersion: tls.VersionTLS13' to the TLS configuration to bump the minimum version to TLS 1.3.
+
+**Code Snippet:**
+
+     561 | 		glog.Fatalf("Failed to read Server Certificate files %s  %s: %v", *serverCert, *serverKey, err)
+     562 | 	}
+     563 | 
+>>>  564 | 	tlsConfig = &tls.Config{
+>>>  565 | 		RootCAs:      caCertPool,
+>>>  566 | 		Certificates: []tls.Certificate{serverCerts},
+>>>  567 | 	}
+     568 | 
+     569 | 	ce := credentials.NewTLS(tlsConfig)
+     570 | 
+
+Provide your analysis in the following structured format:
+
+1. **OWASP Category**: Identify the specific OWASP Top 10 (2021) category (e.g., A01:2021 - Broken Access Control). If multiple categories apply, list all.
+2. **CWE Mapping**: Identify the relevant CWE (Common Weakness Enumeration) ID(s).
+3. **CVSS Estimate**: Provide an estimated CVSS v3.1 base score and vector string.
+4. **Severity**: Rate as one of: INFO, WARNING, ERROR.
+5. **Attack Vector**: Describe the specific attack scenario. Include example payloads where applicable.
+6. **Impact**: Describe the potential business and technical impact if exploited, including data confidentiality, integrity, and availability.
+7. **Remediation**: Provide a specific, secure code fix. Show the corrected code.
+8. **Defence in Depth**: Suggest additional security controls beyond the code fix (e.g., WAF rules, input validation layers, security headers).
+9. **References**: List relevant CWE IDs, OWASP links, and Cisco security advisories if applicable.
+2026-03-15 19:00:50 [DEBUG] ======================================================================
+2026-03-15 19:00:50 [DEBUG] Prompt written to temporary file: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt_ssc8mkem.txt
+2026-03-15 19:00:50 [DEBUG] Executing: llama-cli --hf-repo fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF --hf-file foundation-sec-8b-instruct-q8_0.gguf -c 8192 -ngl -1 -t 6 -p <prompt>
+2026-03-15 19:01:32 [DEBUG] Temporary prompt file cleaned up: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt_ssc8mkem.txt
+2026-03-15 19:01:32 [INFO] Finding 3/17 complete. Status: success
+2026-03-15 19:01:32 [INFO] Processing finding 4/17...
+2026-03-15 19:01:32 [INFO] Analyzing [WARNING] 'yaml.kubernetes.security.secrets-in-config-file.secrets-in-config-file' at ../../Downloads/GCP-Remote-attestation-master/src/app.yaml:3-3 ...
+2026-03-15 19:01:32 [DEBUG] ======================================================================
+2026-03-15 19:01:32 [DEBUG] LLM PROMPT (Foundation-Sec-8B via llama-cli)
+2026-03-15 19:01:32 [DEBUG] ======================================================================
+2026-03-15 19:01:32 [DEBUG] You are a cybersecurity expert performing a secure code review.
+Your task is to analyze a vulnerability detected by Semgrep and map it to the OWASP Top 10 (2021) framework.
+
+**Rule ID:** yaml.kubernetes.security.secrets-in-config-file.secrets-in-config-file
+**Semgrep Finding:** Secrets (LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVEVENDQXZXZ0F3SUJBZ0lCQWpBTkJna3Foa2lHOXcwQkFRc0ZBREJRTVFzd0NRWURWUVFHRXdKVlV6RVAKTUEwR0ExVUVDZ3dHUjI5dloyeGxNUk13RVFZRFZRUUxEQXBGYm5SbGNuQnlhWE5sTVJzd0dRWURWUVFEREJKRgpiblJsY25CeWFYTmxJRkp2YjNRZ1EwRXdIaGNOTWpJd01UQTVNakl3TlRReldoY05Nekl3TVRBNU1qSXdOVFF6CldqQlhNUXN3Q1FZRFZRUUdFd0pWVXpFUE1BMEdBMVVFQ2d3R1IyOXZaMnhsTVJNd0VRWURWUVFMREFwRmJuUmwKY25CeWFYTmxNU0l3SUFZRFZRUUREQmxGYm5SbGNuQnlhWE5sSUZOMVltOXlaR2x1WVhSbElFTkJNSUlCSWpBTgpCZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUF6UUVTdVlySjVVdlZ6Tmw2SzlITDJ3SWpLcGkxClptVU5ObERvbndJRy84T3FwcHY4TGw1NXVLNUxzUW5QRVBqaXU2ZHhlTzdMSC9ZTVpESVpNWVNuNjI2UUtTNmMKQlE2N1dXSHAyeHZiNHpYSXBqbndMdDZGWCsrcHM4eVpOd1BuVDZ5a3pVVWRUZ3ZEUEh6aXNjcXY4aUJpTkp2MAp6c21UOXN5Wk5mWHlGTU1RVlB2SWxFN2hCNDV4akdHbko1ekhTV3JJWHowaWs0Smg3SUJSaE00TE03a2k3dVZQCnE2MTk1Y0I2M0w5SEh3UnpmcGFHYnVzcHRFeW1SYm5qVFlFcnUveElISDcxSlJsQkpLSTZzNWZ4MWlhQXpPSHcKNCtiUU9zdmZjM2xyNW5zeURPUHVrdm5lM3JMU1VQa2dTWUx0bEV2UGV3cDM1d0hpWGxEc0VnTXM3d0lEQVFBQgpvNEhxTUlIbk1BNEdBMVVkRHdFQi93UUVBd0lCQmpBU0JnTlZIUk1CQWY4RUNEQUdBUUgvQWdFQU1CMEdBMVVkCkRnUVdCQlMzdXJBQ29lZStOTWJCQlZ4bWVPVzdVMTJoVkRBZkJnTlZIU01FR0RBV2dCUjhIRnZvUHJNekNaYVMKTXRoL1JML01qSk9ja2pCRkJnZ3JCZ0VGQlFjQkFRUTVNRGN3TlFZSUt3WUJCUVVITUFLR0tXaDBkSEE2THk5dwphMmt1WlhOdlpHVnRiMkZ3Y0RJdVkyOXRMMk5oTDNKdmIzUXRZMkV1WTJWeU1Eb0dBMVVkSHdRek1ERXdMNkF0Cm9DdUdLV2gwZEhBNkx5OXdhMmt1WlhOdlpHVnRiMkZ3Y0RJdVkyOXRMMk5oTDNKdmIzUXRZMkV1WTNKc01BMEcKQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUURDcnJBd2RlUlFNb3Z1MDB3czhJM3JlVUlNRWR0c0Z3TFJTaHUwZ2dWaApHSE1IMXZHRHBkUkpvYVNwQ0dkQ2NQdjFJQTBCa0w2OTY5ZGYxR0RVeFFPV2JpTGFqeVE1UzZmVkZnWi95SWJuCjNTek13N0R1YmlnMmk5eEpvOWxhUHBqampNL2dGNmJCU3hkaG9MVUtMRmYwZTgyRkN1QVBYc2tlaVc3QmMxWEIKM3VpNHhnUE5WejNUSHU4TWE5ei9mVEpSb2hyQzh0MUMvcGFiN1RRcGNRUjZYa1JyWDVTYi9NTTZUbkZldzdzRAo1Y3VGVDdvL0R2YldUNDIvVVAybnVOaTU5MVRJR1lESkJDS0JxbmQwQUg2UnorVlR5ZVJVVnA0ajIxRXh0ekwwCkpLbU4xUytkbVA1VzZQMUVWK3p0RWxsS0VWM04vZTZyNjU1d2xERy8weTdHCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0=) should not be stored in infrastructure as code files. Use an alternative such as Bitnami Sealed Secrets or KSOPS to encrypt Kubernetes Secrets. 
+
+**Code Snippet:**
+
+       1 | apiVersion: v1
+       2 | data:
+>>>    3 |   root.pem: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVEVENDQXZXZ0F3SUJBZ0lCQWpBTkJna3Foa2lHOXcwQkFRc0ZBREJRTVFzd0NRWURWUVFHRXdKVlV6RVAKTUEwR0ExVUVDZ3dHUjI5dloyeGxNUk13RVFZRFZRUUxEQXBGYm5SbGNuQnlhWE5sTVJzd0dRWURWUVFEREJKRgpiblJsY25CeWFYTmxJRkp2YjNRZ1EwRXdIaGNOTWpJd01UQTVNakl3TlRReldoY05Nekl3TVRBNU1qSXdOVFF6CldqQlhNUXN3Q1FZRFZRUUdFd0pWVXpFUE1BMEdBMVVFQ2d3R1IyOXZaMnhsTVJNd0VRWURWUVFMREFwRmJuUmwKY25CeWFYTmxNU0l3SUFZRFZRUUREQmxGYm5SbGNuQnlhWE5sSUZOMVltOXlaR2x1WVhSbElFTkJNSUlCSWpBTgpCZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUF6UUVTdVlySjVVdlZ6Tmw2SzlITDJ3SWpLcGkxClptVU5ObERvbndJRy84T3FwcHY4TGw1NXVLNUxzUW5QRVBqaXU2ZHhlTzdMSC9ZTVpESVpNWVNuNjI2UUtTNmMKQlE2N1dXSHAyeHZiNHpYSXBqbndMdDZGWCsrcHM4eVpOd1BuVDZ5a3pVVWRUZ3ZEUEh6aXNjcXY4aUJpTkp2MAp6c21UOXN5Wk5mWHlGTU1RVlB2SWxFN2hCNDV4akdHbko1ekhTV3JJWHowaWs0Smg3SUJSaE00TE03a2k3dVZQCnE2MTk1Y0I2M0w5SEh3UnpmcGFHYnVzcHRFeW1SYm5qVFlFcnUveElISDcxSlJsQkpLSTZzNWZ4MWlhQXpPSHcKNCtiUU9zdmZjM2xyNW5zeURPUHVrdm5lM3JMU1VQa2dTWUx0bEV2UGV3cDM1d0hpWGxEc0VnTXM3d0lEQVFBQgpvNEhxTUlIbk1BNEdBMVVkRHdFQi93UUVBd0lCQmpBU0JnTlZIUk1CQWY4RUNEQUdBUUgvQWdFQU1CMEdBMVVkCkRnUVdCQlMzdXJBQ29lZStOTWJCQlZ4bWVPVzdVMTJoVkRBZkJnTlZIU01FR0RBV2dCUjhIRnZvUHJNekNaYVMKTXRoL1JML01qSk9ja2pCRkJnZ3JCZ0VGQlFjQkFRUTVNRGN3TlFZSUt3WUJCUVVITUFLR0tXaDBkSEE2THk5dwphMmt1WlhOdlpHVnRiMkZ3Y0RJdVkyOXRMMk5oTDNKdmIzUXRZMkV1WTJWeU1Eb0dBMVVkSHdRek1ERXdMNkF0Cm9DdUdLV2gwZEhBNkx5OXdhMmt1WlhOdlpHVnRiMkZ3Y0RJdVkyOXRMMk5oTDNKdmIzUXRZMkV1WTNKc01BMEcKQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUURDcnJBd2RlUlFNb3Z1MDB3czhJM3JlVUlNRWR0c0Z3TFJTaHUwZ2dWaApHSE1IMXZHRHBkUkpvYVNwQ0dkQ2NQdjFJQTBCa0w2OTY5ZGYxR0RVeFFPV2JpTGFqeVE1UzZmVkZnWi95SWJuCjNTek13N0R1YmlnMmk5eEpvOWxhUHBqampNL2dGNmJCU3hkaG9MVUtMRmYwZTgyRkN1QVBYc2tlaVc3QmMxWEIKM3VpNHhnUE5WejNUSHU4TWE5ei9mVEpSb2hyQzh0MUMvcGFiN1RRcGNRUjZYa1JyWDVTYi9NTTZUbkZldzdzRAo1Y3VGVDdvL0R2YldUNDIvVVAybnVOaTU5MVRJR1lESkJDS0JxbmQwQUg2UnorVlR5ZVJVVnA0ajIxRXh0ekwwCkpLbU4xUytkbVA1VzZQMUVWK3p0RWxsS0VWM04vZTZyNjU1d2xERy8weTdHCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0=
+       4 |   tpm_client.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVHVENDQXdHZ0F3SUJBZ0lCSlRBTkJna3Foa2lHOXcwQkFRc0ZBREJYTVFzd0NRWURWUVFHRXdKVlV6RVAKTUEwR0ExVUVDZ3dHUjI5dloyeGxNUk13RVFZRFZRUUxEQXBGYm5SbGNuQnlhWE5sTVNJd0lBWURWUVFEREJsRgpiblJsY25CeWFYTmxJRk4xWW05eVpHbHVZWFJsSUVOQk1CNFhEVEl5TURreE1URXlORE0xT1ZvWERUSTBNVEl4Ck9URXlORE0xT1Zvd1VqRUxNQWtHQTFVRUJoTUNWVk14RHpBTkJnTlZCQW9NQmtkdmIyZHNaVEVUTUJFR0ExVUUKQ3d3S1JXNTBaWEp3Y21selpURWRNQnNHQTFVRUF3d1VkSEJ0YzJsbmJtVnlRR1J2YldGcGJpNWpiMjB3Z2dFaQpNQTBHQ1NxR1NJYjNEUUVCQVFVQUE0SUJEd0F3Z2dFS0FvSUJBUUQ3Qms3WHR1TWszeW94UnZBZEc0QW9Dd01DCldESTV0STM0ai9HQUorUHpsR3lYTzd5bEtwcjNSUERDay9IZlRTajFCcHNla1BweVZwazlZa0NaRi9wNUNGV3EKRW5hV1lsUExBc2toNE5PUU9kQ0wvZzJTRnJ1RCtpaGhodTFlWDNFOTBROW1DbmZFdER5dDk5M1I1U0x0QnhnVgpFUm1GUXM0bVBlRjAxNVlRWmhONUZMTjNTcW05UEliRE1SQ2FxYXI0OHkrRnc0bjFObFFUa1p0dmNveDEzamJJCmJ3cEVZQit2dG1uSXZ6bE9abS84aWNPeEd0U25wcVJpRENzaXlpdG9wekZMM1BxMUtzS3ZDWHV4MnEyWFRHR0MKOGtzNW1lb0FUcUttcldhYkhxZ0pNdGxLWDJocHlEV0pCZ1BKVURQcFNOSWc2Ly9zUjJEY2trMEJXemRmQWdNQgpBQUdqZ2ZRd2dmRXdEZ1lEVlIwUEFRSC9CQVFEQWdlQU1Ba0dBMVVkRXdRQ01BQXdFd1lEVlIwbEJBd3dDZ1lJCkt3WUJCUVVIQXdNd0hRWURWUjBPQkJZRUZHSUJPY245Ukc1cGpwQkIzQlNxL011WWVZMkhNQjhHQTFVZEl3UVkKTUJhQUZMZTZzQUtoNTc0MHhzRUZYR1o0NWJ0VFhhRlVNRVFHQ0NzR0FRVUZCd0VCQkRnd05qQTBCZ2dyQmdFRgpCUWN3QW9Zb2FIUjBjRG92TDNCcmFTNWxjMjlrWlcxdllYQndNaTVqYjIwdlkyRXZkR3h6TFdOaExtTmxjakE1CkJnTlZIUjhFTWpBd01DNmdMS0FxaGlob2RIUndPaTh2Y0d0cExtVnpiMlJsYlc5aGNIQXlMbU52YlM5allTOTAKYkhNdFkyRXVZM0pzTUEwR0NTcUdTSWIzRFFFQkN3VUFBNElCQVFBc21TRlpXYll3dGtNQ2pYYnRVdGFCelZFRgp0TXlkc3p0R0VwRE0zaXdNZzFoZyt3T1kydXVYL2xBYmlwSm1vUk5HZnF3NzB5V1p1aHFqdGlzakJRb3JtRVZqCkFkU0d6Uk8yYWlxTnVwTjIwMDNDM2lJaUZVVTEvSGMxbXZxUnNha3BRc0U1clpmY0ZSMlZsanBtT1o3cWM2MjgKTnd6T3NBZWZVVS9SWXBXMUdxSnVhUXdOZGlCYVNPVjdOSXk2VFZBa29henBsS3NzWHZWc1ZIMStFb05JTTNjawpKYUdjQnNsay9JSkVDOTU5endsSlhPWkNmdGo2R1ZIRy80SFNVRDZhdEI3cmMrVWhVZFdxcUZtQ2RnWFVNUWQwCklRUkk5TGFKaktoNjNkNUp2QUdqNXQ0SVJ1dHFVNjZjS1lEWFdkcEtpQ0NmVCtjRDhuYSsrc1pLbU05RQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0t
+       5 |   tpm_client.key: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFb2dJQkFBS0NBUUVBK3daTzE3YmpKTjhxTVVid0hSdUFLQXNEQWxneU9iU04rSS94Z0Nmajg1UnNsenU4CnBTcWE5MFR3d3BQeDMwMG85UWFiSHBENmNsYVpQV0pBbVJmNmVRaFZxaEoybG1KVHl3TEpJZURUa0RuUWkvNE4Ka2hhN2cvb29ZWWJ0WGw5eFBkRVBaZ3AzeExROHJmZmQwZVVpN1FjWUZSRVpoVUxPSmozaGROZVdFR1lUZVJTegpkMHFwdlR5R3d6RVFtcW1xK1BNdmhjT0o5VFpVRTVHYmIzS01kZDQyeUc4S1JHQWZyN1pweUw4NVRtWnYvSW5ECnNSclVwNmFrWWd3cklzb3JhS2N4Uzl6NnRTckNyd2w3c2RxdGwweGhndkpMT1pucUFFNmlwcTFtbXg2b0NUTFoKU2w5b2FjZzFpUVlEeVZBejZValNJT3YvN0VkZzNKSk5BVnMzWHdJREFRQUJBb0lCQUZKWFg5NW5xZnVxem9MSwpnN0h3bHVuTHJ1bUNkN3N4REU3b0hLNU9wM243aW1GVFlZNkdPcjM0bWNjaDAzbk5yQzB2eFF0U1FDem9WaXpxCkFVbVdzWDBwTER4MUFQeFVkYXNHbDJackFzcnhCQVVmeVdETjN5V3NGYm5rRWhIZVdkMk9xYS90cUJyWWluMEEKYlAxUVhkUUZlek5SNEI2ejZyNWxsd0tHUXozT0w2N1poakRQVjlEYWtsS2t0V3htMWJnZmxnZ2JLaGp3Uzl3RwpPME1YZk9acEpwcngrSXVTZlQ5RFg5SUNYOW5HelQ0RThyNDJZS1MyK1JZazh0WmNTeksrcnhFeldaeGEzY2pPCkZObnlXdEFtd2xLbkkwQVBUSWhnUXFWRk9BQXZrNVd1SU5RazI2YlNJSnFBTEpxOFBIbFVKd3RHTmRKcVB1TXcKL1RKVWYvMENnWUVBL1JtYzVLc2lsY2xhNWNWYlZkZCtodG1ocm5LUmpIRGY2YjZCSjhSNnRGNjhUVHV3ckZtZgpPZlZ3cEpZWVdQSmlRQTlkSDJkdGZBSmgvMVRJNEh1S0ZFUVJEZ2dnZG9YcnErbllRcjEvb0pyUFJGaVEvMUFiCmRnSWY0TWppZlZCUHkzMU0wM2FIWnVXSUZtejFUMmsrWHM5UGFRd01Ld2J1Vm54ZWZvNC9HbFVDZ1lFQS9lYWIKaWRIOXdwU2FtVzdoYmIvcm9GemVlci9WbTlmazB1dHJEQmROTGZUeFpiODBVME96M2FhWHI5cC9kaDRBY3FDWQphOVFPaTBYYlloVndBZnFXNXRNRC9wKzZ2b2J5SXEwMTN1N1Q1azdQZEdDaWtVSVJXUHVQTDF1QlBqR3JLREorCmRLUzdhUkhRVWg0WktJVEMzeDJaVGprZFNoN01oS3puMVJwRlp1TUNnWUJ1TDE5WlFaT2Q1L24xZTlUR2F6ay8KRmJISWswSUFCUWZGNTlTc2JtSUk4aEZDQWxGb3h0K0Z5TzlRQjdQenpSbXV6OEYzc1h3OWQ0QVlPMTMwTkhRcApYSFNjU2pkdndkK1dpUWhJRGQxcEd0eE80Y3ZHQ3FiWjJoVHN0Q2U5N0YvQXMvemxObjI5OHdFcTJpWjFldGpYClI2TkhsU0lhL1RwM1ZrK0JBd1kvdlFLQmdENmlMOFpzNWdPbE13b2NuMEc2c1g2cXlqdFByWHMzWS94Z0ZOVXoKdmxkUzhHWGdLQ0ZPTjBXN2ZmbmtsY0xtbmNlcE5GQ05URlV4RTNCN3gxakZuNG9yamZXM0k1TXlxUExDOWVJYgoybXdiRHZRdmpvcjAyR0N5RmQxaDNsMGdWWStoL1MzN0lUeEhKN1BLTnZ5VzI1ZThybi9zZVB3NjRzcnIrSGpLCmRVcHZBb0dBQWgwU1JNSlMrZlJLU0FjTzY4bFRnTW4reUZ3OGUwZ1VCdHZxbW90dTEya3dxL0Z6UEpHM0d3TEYKeGJtbWxML21pcFRRRm1WYVlTaCs2RGFya2phbUg2QXRyeHlqT3lzRUhFb1hHNi9RUFVPUzFaTzRqQTU2QldORgpyUkZDMHlzc3NEVGw2VXZlclZVMkp4YnlPNE5JVE5HOVJ2WklibUI2SmV0amhZMHpvaEE9Ci0tLS0tRU5EIFJTQSBQUklWQVRFIEtFWS0tLS0t
+       6 | kind: Secret
+
+Provide your analysis in the following structured format:
+
+1. **OWASP Category**: Identify the specific OWASP Top 10 (2021) category (e.g., A01:2021 - Broken Access Control). If multiple categories apply, list all.
+2. **CWE Mapping**: Identify the relevant CWE (Common Weakness Enumeration) ID(s).
+3. **CVSS Estimate**: Provide an estimated CVSS v3.1 base score and vector string.
+4. **Severity**: Rate as one of: INFO, WARNING, ERROR.
+5. **Attack Vector**: Describe the specific attack scenario. Include example payloads where applicable.
+6. **Impact**: Describe the potential business and technical impact if exploited, including data confidentiality, integrity, and availability.
+7. **Remediation**: Provide a specific, secure code fix. Show the corrected code.
+8. **Defence in Depth**: Suggest additional security controls beyond the code fix (e.g., WAF rules, input validation layers, security headers).
+9. **References**: List relevant CWE IDs, OWASP links, and Cisco security advisories if applicable.
+2026-03-15 19:01:32 [DEBUG] ======================================================================
+2026-03-15 19:01:32 [DEBUG] Prompt written to temporary file: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt_mj1585ap.txt
+2026-03-15 19:01:32 [DEBUG] Executing: llama-cli --hf-repo fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF --hf-file foundation-sec-8b-instruct-q8_0.gguf -c 8192 -ngl -1 -t 6 -p <prompt>
+2026-03-15 19:02:57 [DEBUG] Temporary prompt file cleaned up: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt_mj1585ap.txt
+2026-03-15 19:02:57 [INFO] Finding 4/17 complete. Status: success
+2026-03-15 19:02:57 [INFO] Processing finding 5/17...
+2026-03-15 19:02:57 [INFO] Analyzing [WARNING] 'yaml.kubernetes.security.secrets-in-config-file.secrets-in-config-file' at ../../Downloads/GCP-Remote-attestation-master/src/app.yaml:4-4 ...
+2026-03-15 19:02:57 [DEBUG] ======================================================================
+2026-03-15 19:02:57 [DEBUG] LLM PROMPT (Foundation-Sec-8B via llama-cli)
+2026-03-15 19:02:57 [DEBUG] ======================================================================
+2026-03-15 19:02:57 [DEBUG] You are a cybersecurity expert performing a secure code review.
+Your task is to analyze a vulnerability detected by Semgrep and map it to the OWASP Top 10 (2021) framework.
+
+**Rule ID:** yaml.kubernetes.security.secrets-in-config-file.secrets-in-config-file
+**Semgrep Finding:** Secrets (LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVHVENDQXdHZ0F3SUJBZ0lCSlRBTkJna3Foa2lHOXcwQkFRc0ZBREJYTVFzd0NRWURWUVFHRXdKVlV6RVAKTUEwR0ExVUVDZ3dHUjI5dloyeGxNUk13RVFZRFZRUUxEQXBGYm5SbGNuQnlhWE5sTVNJd0lBWURWUVFEREJsRgpiblJsY25CeWFYTmxJRk4xWW05eVpHbHVZWFJsSUVOQk1CNFhEVEl5TURreE1URXlORE0xT1ZvWERUSTBNVEl4Ck9URXlORE0xT1Zvd1VqRUxNQWtHQTFVRUJoTUNWVk14RHpBTkJnTlZCQW9NQmtkdmIyZHNaVEVUTUJFR0ExVUUKQ3d3S1JXNTBaWEp3Y21selpURWRNQnNHQTFVRUF3d1VkSEJ0YzJsbmJtVnlRR1J2YldGcGJpNWpiMjB3Z2dFaQpNQTBHQ1NxR1NJYjNEUUVCQVFVQUE0SUJEd0F3Z2dFS0FvSUJBUUQ3Qms3WHR1TWszeW94UnZBZEc0QW9Dd01DCldESTV0STM0ai9HQUorUHpsR3lYTzd5bEtwcjNSUERDay9IZlRTajFCcHNla1BweVZwazlZa0NaRi9wNUNGV3EKRW5hV1lsUExBc2toNE5PUU9kQ0wvZzJTRnJ1RCtpaGhodTFlWDNFOTBROW1DbmZFdER5dDk5M1I1U0x0QnhnVgpFUm1GUXM0bVBlRjAxNVlRWmhONUZMTjNTcW05UEliRE1SQ2FxYXI0OHkrRnc0bjFObFFUa1p0dmNveDEzamJJCmJ3cEVZQit2dG1uSXZ6bE9abS84aWNPeEd0U25wcVJpRENzaXlpdG9wekZMM1BxMUtzS3ZDWHV4MnEyWFRHR0MKOGtzNW1lb0FUcUttcldhYkhxZ0pNdGxLWDJocHlEV0pCZ1BKVURQcFNOSWc2Ly9zUjJEY2trMEJXemRmQWdNQgpBQUdqZ2ZRd2dmRXdEZ1lEVlIwUEFRSC9CQVFEQWdlQU1Ba0dBMVVkRXdRQ01BQXdFd1lEVlIwbEJBd3dDZ1lJCkt3WUJCUVVIQXdNd0hRWURWUjBPQkJZRUZHSUJPY245Ukc1cGpwQkIzQlNxL011WWVZMkhNQjhHQTFVZEl3UVkKTUJhQUZMZTZzQUtoNTc0MHhzRUZYR1o0NWJ0VFhhRlVNRVFHQ0NzR0FRVUZCd0VCQkRnd05qQTBCZ2dyQmdFRgpCUWN3QW9Zb2FIUjBjRG92TDNCcmFTNWxjMjlrWlcxdllYQndNaTVqYjIwdlkyRXZkR3h6TFdOaExtTmxjakE1CkJnTlZIUjhFTWpBd01DNmdMS0FxaGlob2RIUndPaTh2Y0d0cExtVnpiMlJsYlc5aGNIQXlMbU52YlM5allTOTAKYkhNdFkyRXVZM0pzTUEwR0NTcUdTSWIzRFFFQkN3VUFBNElCQVFBc21TRlpXYll3dGtNQ2pYYnRVdGFCelZFRgp0TXlkc3p0R0VwRE0zaXdNZzFoZyt3T1kydXVYL2xBYmlwSm1vUk5HZnF3NzB5V1p1aHFqdGlzakJRb3JtRVZqCkFkU0d6Uk8yYWlxTnVwTjIwMDNDM2lJaUZVVTEvSGMxbXZxUnNha3BRc0U1clpmY0ZSMlZsanBtT1o3cWM2MjgKTnd6T3NBZWZVVS9SWXBXMUdxSnVhUXdOZGlCYVNPVjdOSXk2VFZBa29henBsS3NzWHZWc1ZIMStFb05JTTNjawpKYUdjQnNsay9JSkVDOTU5endsSlhPWkNmdGo2R1ZIRy80SFNVRDZhdEI3cmMrVWhVZFdxcUZtQ2RnWFVNUWQwCklRUkk5TGFKaktoNjNkNUp2QUdqNXQ0SVJ1dHFVNjZjS1lEWFdkcEtpQ0NmVCtjRDhuYSsrc1pLbU05RQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0t) should not be stored in infrastructure as code files. Use an alternative such as Bitnami Sealed Secrets or KSOPS to encrypt Kubernetes Secrets. 
+
+**Code Snippet:**
+
+       1 | apiVersion: v1
+       2 | data:
+       3 |   root.pem: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVEVENDQXZXZ0F3SUJBZ0lCQWpBTkJna3Foa2lHOXcwQkFRc0ZBREJRTVFzd0NRWURWUVFHRXdKVlV6RVAKTUEwR0ExVUVDZ3dHUjI5dloyeGxNUk13RVFZRFZRUUxEQXBGYm5SbGNuQnlhWE5sTVJzd0dRWURWUVFEREJKRgpiblJsY25CeWFYTmxJRkp2YjNRZ1EwRXdIaGNOTWpJd01UQTVNakl3TlRReldoY05Nekl3TVRBNU1qSXdOVFF6CldqQlhNUXN3Q1FZRFZRUUdFd0pWVXpFUE1BMEdBMVVFQ2d3R1IyOXZaMnhsTVJNd0VRWURWUVFMREFwRmJuUmwKY25CeWFYTmxNU0l3SUFZRFZRUUREQmxGYm5SbGNuQnlhWE5sSUZOMVltOXlaR2x1WVhSbElFTkJNSUlCSWpBTgpCZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUF6UUVTdVlySjVVdlZ6Tmw2SzlITDJ3SWpLcGkxClptVU5ObERvbndJRy84T3FwcHY4TGw1NXVLNUxzUW5QRVBqaXU2ZHhlTzdMSC9ZTVpESVpNWVNuNjI2UUtTNmMKQlE2N1dXSHAyeHZiNHpYSXBqbndMdDZGWCsrcHM4eVpOd1BuVDZ5a3pVVWRUZ3ZEUEh6aXNjcXY4aUJpTkp2MAp6c21UOXN5Wk5mWHlGTU1RVlB2SWxFN2hCNDV4akdHbko1ekhTV3JJWHowaWs0Smg3SUJSaE00TE03a2k3dVZQCnE2MTk1Y0I2M0w5SEh3UnpmcGFHYnVzcHRFeW1SYm5qVFlFcnUveElISDcxSlJsQkpLSTZzNWZ4MWlhQXpPSHcKNCtiUU9zdmZjM2xyNW5zeURPUHVrdm5lM3JMU1VQa2dTWUx0bEV2UGV3cDM1d0hpWGxEc0VnTXM3d0lEQVFBQgpvNEhxTUlIbk1BNEdBMVVkRHdFQi93UUVBd0lCQmpBU0JnTlZIUk1CQWY4RUNEQUdBUUgvQWdFQU1CMEdBMVVkCkRnUVdCQlMzdXJBQ29lZStOTWJCQlZ4bWVPVzdVMTJoVkRBZkJnTlZIU01FR0RBV2dCUjhIRnZvUHJNekNaYVMKTXRoL1JML01qSk9ja2pCRkJnZ3JCZ0VGQlFjQkFRUTVNRGN3TlFZSUt3WUJCUVVITUFLR0tXaDBkSEE2THk5dwphMmt1WlhOdlpHVnRiMkZ3Y0RJdVkyOXRMMk5oTDNKdmIzUXRZMkV1WTJWeU1Eb0dBMVVkSHdRek1ERXdMNkF0Cm9DdUdLV2gwZEhBNkx5OXdhMmt1WlhOdlpHVnRiMkZ3Y0RJdVkyOXRMMk5oTDNKdmIzUXRZMkV1WTNKc01BMEcKQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUURDcnJBd2RlUlFNb3Z1MDB3czhJM3JlVUlNRWR0c0Z3TFJTaHUwZ2dWaApHSE1IMXZHRHBkUkpvYVNwQ0dkQ2NQdjFJQTBCa0w2OTY5ZGYxR0RVeFFPV2JpTGFqeVE1UzZmVkZnWi95SWJuCjNTek13N0R1YmlnMmk5eEpvOWxhUHBqampNL2dGNmJCU3hkaG9MVUtMRmYwZTgyRkN1QVBYc2tlaVc3QmMxWEIKM3VpNHhnUE5WejNUSHU4TWE5ei9mVEpSb2hyQzh0MUMvcGFiN1RRcGNRUjZYa1JyWDVTYi9NTTZUbkZldzdzRAo1Y3VGVDdvL0R2YldUNDIvVVAybnVOaTU5MVRJR1lESkJDS0JxbmQwQUg2UnorVlR5ZVJVVnA0ajIxRXh0ekwwCkpLbU4xUytkbVA1VzZQMUVWK3p0RWxsS0VWM04vZTZyNjU1d2xERy8weTdHCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0=
+>>>    4 |   tpm_client.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVHVENDQXdHZ0F3SUJBZ0lCSlRBTkJna3Foa2lHOXcwQkFRc0ZBREJYTVFzd0NRWURWUVFHRXdKVlV6RVAKTUEwR0ExVUVDZ3dHUjI5dloyeGxNUk13RVFZRFZRUUxEQXBGYm5SbGNuQnlhWE5sTVNJd0lBWURWUVFEREJsRgpiblJsY25CeWFYTmxJRk4xWW05eVpHbHVZWFJsSUVOQk1CNFhEVEl5TURreE1URXlORE0xT1ZvWERUSTBNVEl4Ck9URXlORE0xT1Zvd1VqRUxNQWtHQTFVRUJoTUNWVk14RHpBTkJnTlZCQW9NQmtkdmIyZHNaVEVUTUJFR0ExVUUKQ3d3S1JXNTBaWEp3Y21selpURWRNQnNHQTFVRUF3d1VkSEJ0YzJsbmJtVnlRR1J2YldGcGJpNWpiMjB3Z2dFaQpNQTBHQ1NxR1NJYjNEUUVCQVFVQUE0SUJEd0F3Z2dFS0FvSUJBUUQ3Qms3WHR1TWszeW94UnZBZEc0QW9Dd01DCldESTV0STM0ai9HQUorUHpsR3lYTzd5bEtwcjNSUERDay9IZlRTajFCcHNla1BweVZwazlZa0NaRi9wNUNGV3EKRW5hV1lsUExBc2toNE5PUU9kQ0wvZzJTRnJ1RCtpaGhodTFlWDNFOTBROW1DbmZFdER5dDk5M1I1U0x0QnhnVgpFUm1GUXM0bVBlRjAxNVlRWmhONUZMTjNTcW05UEliRE1SQ2FxYXI0OHkrRnc0bjFObFFUa1p0dmNveDEzamJJCmJ3cEVZQit2dG1uSXZ6bE9abS84aWNPeEd0U25wcVJpRENzaXlpdG9wekZMM1BxMUtzS3ZDWHV4MnEyWFRHR0MKOGtzNW1lb0FUcUttcldhYkhxZ0pNdGxLWDJocHlEV0pCZ1BKVURQcFNOSWc2Ly9zUjJEY2trMEJXemRmQWdNQgpBQUdqZ2ZRd2dmRXdEZ1lEVlIwUEFRSC9CQVFEQWdlQU1Ba0dBMVVkRXdRQ01BQXdFd1lEVlIwbEJBd3dDZ1lJCkt3WUJCUVVIQXdNd0hRWURWUjBPQkJZRUZHSUJPY245Ukc1cGpwQkIzQlNxL011WWVZMkhNQjhHQTFVZEl3UVkKTUJhQUZMZTZzQUtoNTc0MHhzRUZYR1o0NWJ0VFhhRlVNRVFHQ0NzR0FRVUZCd0VCQkRnd05qQTBCZ2dyQmdFRgpCUWN3QW9Zb2FIUjBjRG92TDNCcmFTNWxjMjlrWlcxdllYQndNaTVqYjIwdlkyRXZkR3h6TFdOaExtTmxjakE1CkJnTlZIUjhFTWpBd01DNmdMS0FxaGlob2RIUndPaTh2Y0d0cExtVnpiMlJsYlc5aGNIQXlMbU52YlM5allTOTAKYkhNdFkyRXVZM0pzTUEwR0NTcUdTSWIzRFFFQkN3VUFBNElCQVFBc21TRlpXYll3dGtNQ2pYYnRVdGFCelZFRgp0TXlkc3p0R0VwRE0zaXdNZzFoZyt3T1kydXVYL2xBYmlwSm1vUk5HZnF3NzB5V1p1aHFqdGlzakJRb3JtRVZqCkFkU0d6Uk8yYWlxTnVwTjIwMDNDM2lJaUZVVTEvSGMxbXZxUnNha3BRc0U1clpmY0ZSMlZsanBtT1o3cWM2MjgKTnd6T3NBZWZVVS9SWXBXMUdxSnVhUXdOZGlCYVNPVjdOSXk2VFZBa29henBsS3NzWHZWc1ZIMStFb05JTTNjawpKYUdjQnNsay9JSkVDOTU5endsSlhPWkNmdGo2R1ZIRy80SFNVRDZhdEI3cmMrVWhVZFdxcUZtQ2RnWFVNUWQwCklRUkk5TGFKaktoNjNkNUp2QUdqNXQ0SVJ1dHFVNjZjS1lEWFdkcEtpQ0NmVCtjRDhuYSsrc1pLbU05RQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0t
+       5 |   tpm_client.key: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFb2dJQkFBS0NBUUVBK3daTzE3YmpKTjhxTVVid0hSdUFLQXNEQWxneU9iU04rSS94Z0Nmajg1UnNsenU4CnBTcWE5MFR3d3BQeDMwMG85UWFiSHBENmNsYVpQV0pBbVJmNmVRaFZxaEoybG1KVHl3TEpJZURUa0RuUWkvNE4Ka2hhN2cvb29ZWWJ0WGw5eFBkRVBaZ3AzeExROHJmZmQwZVVpN1FjWUZSRVpoVUxPSmozaGROZVdFR1lUZVJTegpkMHFwdlR5R3d6RVFtcW1xK1BNdmhjT0o5VFpVRTVHYmIzS01kZDQyeUc4S1JHQWZyN1pweUw4NVRtWnYvSW5ECnNSclVwNmFrWWd3cklzb3JhS2N4Uzl6NnRTckNyd2w3c2RxdGwweGhndkpMT1pucUFFNmlwcTFtbXg2b0NUTFoKU2w5b2FjZzFpUVlEeVZBejZValNJT3YvN0VkZzNKSk5BVnMzWHdJREFRQUJBb0lCQUZKWFg5NW5xZnVxem9MSwpnN0h3bHVuTHJ1bUNkN3N4REU3b0hLNU9wM243aW1GVFlZNkdPcjM0bWNjaDAzbk5yQzB2eFF0U1FDem9WaXpxCkFVbVdzWDBwTER4MUFQeFVkYXNHbDJackFzcnhCQVVmeVdETjN5V3NGYm5rRWhIZVdkMk9xYS90cUJyWWluMEEKYlAxUVhkUUZlek5SNEI2ejZyNWxsd0tHUXozT0w2N1poakRQVjlEYWtsS2t0V3htMWJnZmxnZ2JLaGp3Uzl3RwpPME1YZk9acEpwcngrSXVTZlQ5RFg5SUNYOW5HelQ0RThyNDJZS1MyK1JZazh0WmNTeksrcnhFeldaeGEzY2pPCkZObnlXdEFtd2xLbkkwQVBUSWhnUXFWRk9BQXZrNVd1SU5RazI2YlNJSnFBTEpxOFBIbFVKd3RHTmRKcVB1TXcKL1RKVWYvMENnWUVBL1JtYzVLc2lsY2xhNWNWYlZkZCtodG1ocm5LUmpIRGY2YjZCSjhSNnRGNjhUVHV3ckZtZgpPZlZ3cEpZWVdQSmlRQTlkSDJkdGZBSmgvMVRJNEh1S0ZFUVJEZ2dnZG9YcnErbllRcjEvb0pyUFJGaVEvMUFiCmRnSWY0TWppZlZCUHkzMU0wM2FIWnVXSUZtejFUMmsrWHM5UGFRd01Ld2J1Vm54ZWZvNC9HbFVDZ1lFQS9lYWIKaWRIOXdwU2FtVzdoYmIvcm9GemVlci9WbTlmazB1dHJEQmROTGZUeFpiODBVME96M2FhWHI5cC9kaDRBY3FDWQphOVFPaTBYYlloVndBZnFXNXRNRC9wKzZ2b2J5SXEwMTN1N1Q1azdQZEdDaWtVSVJXUHVQTDF1QlBqR3JLREorCmRLUzdhUkhRVWg0WktJVEMzeDJaVGprZFNoN01oS3puMVJwRlp1TUNnWUJ1TDE5WlFaT2Q1L24xZTlUR2F6ay8KRmJISWswSUFCUWZGNTlTc2JtSUk4aEZDQWxGb3h0K0Z5TzlRQjdQenpSbXV6OEYzc1h3OWQ0QVlPMTMwTkhRcApYSFNjU2pkdndkK1dpUWhJRGQxcEd0eE80Y3ZHQ3FiWjJoVHN0Q2U5N0YvQXMvemxObjI5OHdFcTJpWjFldGpYClI2TkhsU0lhL1RwM1ZrK0JBd1kvdlFLQmdENmlMOFpzNWdPbE13b2NuMEc2c1g2cXlqdFByWHMzWS94Z0ZOVXoKdmxkUzhHWGdLQ0ZPTjBXN2ZmbmtsY0xtbmNlcE5GQ05URlV4RTNCN3gxakZuNG9yamZXM0k1TXlxUExDOWVJYgoybXdiRHZRdmpvcjAyR0N5RmQxaDNsMGdWWStoL1MzN0lUeEhKN1BLTnZ5VzI1ZThybi9zZVB3NjRzcnIrSGpLCmRVcHZBb0dBQWgwU1JNSlMrZlJLU0FjTzY4bFRnTW4reUZ3OGUwZ1VCdHZxbW90dTEya3dxL0Z6UEpHM0d3TEYKeGJtbWxML21pcFRRRm1WYVlTaCs2RGFya2phbUg2QXRyeHlqT3lzRUhFb1hHNi9RUFVPUzFaTzRqQTU2QldORgpyUkZDMHlzc3NEVGw2VXZlclZVMkp4YnlPNE5JVE5HOVJ2WklibUI2SmV0amhZMHpvaEE9Ci0tLS0tRU5EIFJTQSBQUklWQVRFIEtFWS0tLS0t
+       6 | kind: Secret
+       7 | metadata:
+
+Provide your analysis in the following structured format:
+
+1. **OWASP Category**: Identify the specific OWASP Top 10 (2021) category (e.g., A01:2021 - Broken Access Control). If multiple categories apply, list all.
+2. **CWE Mapping**: Identify the relevant CWE (Common Weakness Enumeration) ID(s).
+3. **CVSS Estimate**: Provide an estimated CVSS v3.1 base score and vector string.
+4. **Severity**: Rate as one of: INFO, WARNING, ERROR.
+5. **Attack Vector**: Describe the specific attack scenario. Include example payloads where applicable.
+6. **Impact**: Describe the potential business and technical impact if exploited, including data confidentiality, integrity, and availability.
+7. **Remediation**: Provide a specific, secure code fix. Show the corrected code.
+8. **Defence in Depth**: Suggest additional security controls beyond the code fix (e.g., WAF rules, input validation layers, security headers).
+9. **References**: List relevant CWE IDs, OWASP links, and Cisco security advisories if applicable.
+2026-03-15 19:02:57 [DEBUG] ======================================================================
+2026-03-15 19:02:57 [DEBUG] Prompt written to temporary file: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt_iv8rwl6h.txt
+2026-03-15 19:02:57 [DEBUG] Executing: llama-cli --hf-repo fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF --hf-file foundation-sec-8b-instruct-q8_0.gguf -c 8192 -ngl -1 -t 6 -p <prompt>
+2026-03-15 19:04:23 [DEBUG] Temporary prompt file cleaned up: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt_iv8rwl6h.txt
+2026-03-15 19:04:23 [INFO] Finding 5/17 complete. Status: success
+2026-03-15 19:04:23 [INFO] Processing finding 6/17...
+2026-03-15 19:04:23 [INFO] Analyzing [WARNING] 'yaml.kubernetes.security.secrets-in-config-file.secrets-in-config-file' at ../../Downloads/GCP-Remote-attestation-master/src/app.yaml:5-5 ...
+2026-03-15 19:04:23 [DEBUG] ======================================================================
+2026-03-15 19:04:23 [DEBUG] LLM PROMPT (Foundation-Sec-8B via llama-cli)
+2026-03-15 19:04:23 [DEBUG] ======================================================================
+2026-03-15 19:04:23 [DEBUG] You are a cybersecurity expert performing a secure code review.
+Your task is to analyze a vulnerability detected by Semgrep and map it to the OWASP Top 10 (2021) framework.
+
+**Rule ID:** yaml.kubernetes.security.secrets-in-config-file.secrets-in-config-file
+**Semgrep Finding:** Secrets (LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFb2dJQkFBS0NBUUVBK3daTzE3YmpKTjhxTVVid0hSdUFLQXNEQWxneU9iU04rSS94Z0Nmajg1UnNsenU4CnBTcWE5MFR3d3BQeDMwMG85UWFiSHBENmNsYVpQV0pBbVJmNmVRaFZxaEoybG1KVHl3TEpJZURUa0RuUWkvNE4Ka2hhN2cvb29ZWWJ0WGw5eFBkRVBaZ3AzeExROHJmZmQwZVVpN1FjWUZSRVpoVUxPSmozaGROZVdFR1lUZVJTegpkMHFwdlR5R3d6RVFtcW1xK1BNdmhjT0o5VFpVRTVHYmIzS01kZDQyeUc4S1JHQWZyN1pweUw4NVRtWnYvSW5ECnNSclVwNmFrWWd3cklzb3JhS2N4Uzl6NnRTckNyd2w3c2RxdGwweGhndkpMT1pucUFFNmlwcTFtbXg2b0NUTFoKU2w5b2FjZzFpUVlEeVZBejZValNJT3YvN0VkZzNKSk5BVnMzWHdJREFRQUJBb0lCQUZKWFg5NW5xZnVxem9MSwpnN0h3bHVuTHJ1bUNkN3N4REU3b0hLNU9wM243aW1GVFlZNkdPcjM0bWNjaDAzbk5yQzB2eFF0U1FDem9WaXpxCkFVbVdzWDBwTER4MUFQeFVkYXNHbDJackFzcnhCQVVmeVdETjN5V3NGYm5rRWhIZVdkMk9xYS90cUJyWWluMEEKYlAxUVhkUUZlek5SNEI2ejZyNWxsd0tHUXozT0w2N1poakRQVjlEYWtsS2t0V3htMWJnZmxnZ2JLaGp3Uzl3RwpPME1YZk9acEpwcngrSXVTZlQ5RFg5SUNYOW5HelQ0RThyNDJZS1MyK1JZazh0WmNTeksrcnhFeldaeGEzY2pPCkZObnlXdEFtd2xLbkkwQVBUSWhnUXFWRk9BQXZrNVd1SU5RazI2YlNJSnFBTEpxOFBIbFVKd3RHTmRKcVB1TXcKL1RKVWYvMENnWUVBL1JtYzVLc2lsY2xhNWNWYlZkZCtodG1ocm5LUmpIRGY2YjZCSjhSNnRGNjhUVHV3ckZtZgpPZlZ3cEpZWVdQSmlRQTlkSDJkdGZBSmgvMVRJNEh1S0ZFUVJEZ2dnZG9YcnErbllRcjEvb0pyUFJGaVEvMUFiCmRnSWY0TWppZlZCUHkzMU0wM2FIWnVXSUZtejFUMmsrWHM5UGFRd01Ld2J1Vm54ZWZvNC9HbFVDZ1lFQS9lYWIKaWRIOXdwU2FtVzdoYmIvcm9GemVlci9WbTlmazB1dHJEQmROTGZUeFpiODBVME96M2FhWHI5cC9kaDRBY3FDWQphOVFPaTBYYlloVndBZnFXNXRNRC9wKzZ2b2J5SXEwMTN1N1Q1azdQZEdDaWtVSVJXUHVQTDF1QlBqR3JLREorCmRLUzdhUkhRVWg0WktJVEMzeDJaVGprZFNoN01oS3puMVJwRlp1TUNnWUJ1TDE5WlFaT2Q1L24xZTlUR2F6ay8KRmJISWswSUFCUWZGNTlTc2JtSUk4aEZDQWxGb3h0K0Z5TzlRQjdQenpSbXV6OEYzc1h3OWQ0QVlPMTMwTkhRcApYSFNjU2pkdndkK1dpUWhJRGQxcEd0eE80Y3ZHQ3FiWjJoVHN0Q2U5N0YvQXMvemxObjI5OHdFcTJpWjFldGpYClI2TkhsU0lhL1RwM1ZrK0JBd1kvdlFLQmdENmlMOFpzNWdPbE13b2NuMEc2c1g2cXlqdFByWHMzWS94Z0ZOVXoKdmxkUzhHWGdLQ0ZPTjBXN2ZmbmtsY0xtbmNlcE5GQ05URlV4RTNCN3gxakZuNG9yamZXM0k1TXlxUExDOWVJYgoybXdiRHZRdmpvcjAyR0N5RmQxaDNsMGdWWStoL1MzN0lUeEhKN1BLTnZ5VzI1ZThybi9zZVB3NjRzcnIrSGpLCmRVcHZBb0dBQWgwU1JNSlMrZlJLU0FjTzY4bFRnTW4reUZ3OGUwZ1VCdHZxbW90dTEya3dxL0Z6UEpHM0d3TEYKeGJtbWxML21p... (truncated 184 more characters)) should not be stored in infrastructure as code files. Use an alternative such as Bitnami Sealed Secrets or KSOPS to encrypt Kubernetes Secrets. 
+
+**Code Snippet:**
+
+       2 | data:
+       3 |   root.pem: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVEVENDQXZXZ0F3SUJBZ0lCQWpBTkJna3Foa2lHOXcwQkFRc0ZBREJRTVFzd0NRWURWUVFHRXdKVlV6RVAKTUEwR0ExVUVDZ3dHUjI5dloyeGxNUk13RVFZRFZRUUxEQXBGYm5SbGNuQnlhWE5sTVJzd0dRWURWUVFEREJKRgpiblJsY25CeWFYTmxJRkp2YjNRZ1EwRXdIaGNOTWpJd01UQTVNakl3TlRReldoY05Nekl3TVRBNU1qSXdOVFF6CldqQlhNUXN3Q1FZRFZRUUdFd0pWVXpFUE1BMEdBMVVFQ2d3R1IyOXZaMnhsTVJNd0VRWURWUVFMREFwRmJuUmwKY25CeWFYTmxNU0l3SUFZRFZRUUREQmxGYm5SbGNuQnlhWE5sSUZOMVltOXlaR2x1WVhSbElFTkJNSUlCSWpBTgpCZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUF6UUVTdVlySjVVdlZ6Tmw2SzlITDJ3SWpLcGkxClptVU5ObERvbndJRy84T3FwcHY4TGw1NXVLNUxzUW5QRVBqaXU2ZHhlTzdMSC9ZTVpESVpNWVNuNjI2UUtTNmMKQlE2N1dXSHAyeHZiNHpYSXBqbndMdDZGWCsrcHM4eVpOd1BuVDZ5a3pVVWRUZ3ZEUEh6aXNjcXY4aUJpTkp2MAp6c21UOXN5Wk5mWHlGTU1RVlB2SWxFN2hCNDV4akdHbko1ekhTV3JJWHowaWs0Smg3SUJSaE00TE03a2k3dVZQCnE2MTk1Y0I2M0w5SEh3UnpmcGFHYnVzcHRFeW1SYm5qVFlFcnUveElISDcxSlJsQkpLSTZzNWZ4MWlhQXpPSHcKNCtiUU9zdmZjM2xyNW5zeURPUHVrdm5lM3JMU1VQa2dTWUx0bEV2UGV3cDM1d0hpWGxEc0VnTXM3d0lEQVFBQgpvNEhxTUlIbk1BNEdBMVVkRHdFQi93UUVBd0lCQmpBU0JnTlZIUk1CQWY4RUNEQUdBUUgvQWdFQU1CMEdBMVVkCkRnUVdCQlMzdXJBQ29lZStOTWJCQlZ4bWVPVzdVMTJoVkRBZkJnTlZIU01FR0RBV2dCUjhIRnZvUHJNekNaYVMKTXRoL1JML01qSk9ja2pCRkJnZ3JCZ0VGQlFjQkFRUTVNRGN3TlFZSUt3WUJCUVVITUFLR0tXaDBkSEE2THk5dwphMmt1WlhOdlpHVnRiMkZ3Y0RJdVkyOXRMMk5oTDNKdmIzUXRZMkV1WTJWeU1Eb0dBMVVkSHdRek1ERXdMNkF0Cm9DdUdLV2gwZEhBNkx5OXdhMmt1WlhOdlpHVnRiMkZ3Y0RJdVkyOXRMMk5oTDNKdmIzUXRZMkV1WTNKc01BMEcKQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUURDcnJBd2RlUlFNb3Z1MDB3czhJM3JlVUlNRWR0c0Z3TFJTaHUwZ2dWaApHSE1IMXZHRHBkUkpvYVNwQ0dkQ2NQdjFJQTBCa0w2OTY5ZGYxR0RVeFFPV2JpTGFqeVE1UzZmVkZnWi95SWJuCjNTek13N0R1YmlnMmk5eEpvOWxhUHBqampNL2dGNmJCU3hkaG9MVUtMRmYwZTgyRkN1QVBYc2tlaVc3QmMxWEIKM3VpNHhnUE5WejNUSHU4TWE5ei9mVEpSb2hyQzh0MUMvcGFiN1RRcGNRUjZYa1JyWDVTYi9NTTZUbkZldzdzRAo1Y3VGVDdvL0R2YldUNDIvVVAybnVOaTU5MVRJR1lESkJDS0JxbmQwQUg2UnorVlR5ZVJVVnA0ajIxRXh0ekwwCkpLbU4xUytkbVA1VzZQMUVWK3p0RWxsS0VWM04vZTZyNjU1d2xERy8weTdHCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0=
+       4 |   tpm_client.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVHVENDQXdHZ0F3SUJBZ0lCSlRBTkJna3Foa2lHOXcwQkFRc0ZBREJYTVFzd0NRWURWUVFHRXdKVlV6RVAKTUEwR0ExVUVDZ3dHUjI5dloyeGxNUk13RVFZRFZRUUxEQXBGYm5SbGNuQnlhWE5sTVNJd0lBWURWUVFEREJsRgpiblJsY25CeWFYTmxJRk4xWW05eVpHbHVZWFJsSUVOQk1CNFhEVEl5TURreE1URXlORE0xT1ZvWERUSTBNVEl4Ck9URXlORE0xT1Zvd1VqRUxNQWtHQTFVRUJoTUNWVk14RHpBTkJnTlZCQW9NQmtkdmIyZHNaVEVUTUJFR0ExVUUKQ3d3S1JXNTBaWEp3Y21selpURWRNQnNHQTFVRUF3d1VkSEJ0YzJsbmJtVnlRR1J2YldGcGJpNWpiMjB3Z2dFaQpNQTBHQ1NxR1NJYjNEUUVCQVFVQUE0SUJEd0F3Z2dFS0FvSUJBUUQ3Qms3WHR1TWszeW94UnZBZEc0QW9Dd01DCldESTV0STM0ai9HQUorUHpsR3lYTzd5bEtwcjNSUERDay9IZlRTajFCcHNla1BweVZwazlZa0NaRi9wNUNGV3EKRW5hV1lsUExBc2toNE5PUU9kQ0wvZzJTRnJ1RCtpaGhodTFlWDNFOTBROW1DbmZFdER5dDk5M1I1U0x0QnhnVgpFUm1GUXM0bVBlRjAxNVlRWmhONUZMTjNTcW05UEliRE1SQ2FxYXI0OHkrRnc0bjFObFFUa1p0dmNveDEzamJJCmJ3cEVZQit2dG1uSXZ6bE9abS84aWNPeEd0U25wcVJpRENzaXlpdG9wekZMM1BxMUtzS3ZDWHV4MnEyWFRHR0MKOGtzNW1lb0FUcUttcldhYkhxZ0pNdGxLWDJocHlEV0pCZ1BKVURQcFNOSWc2Ly9zUjJEY2trMEJXemRmQWdNQgpBQUdqZ2ZRd2dmRXdEZ1lEVlIwUEFRSC9CQVFEQWdlQU1Ba0dBMVVkRXdRQ01BQXdFd1lEVlIwbEJBd3dDZ1lJCkt3WUJCUVVIQXdNd0hRWURWUjBPQkJZRUZHSUJPY245Ukc1cGpwQkIzQlNxL011WWVZMkhNQjhHQTFVZEl3UVkKTUJhQUZMZTZzQUtoNTc0MHhzRUZYR1o0NWJ0VFhhRlVNRVFHQ0NzR0FRVUZCd0VCQkRnd05qQTBCZ2dyQmdFRgpCUWN3QW9Zb2FIUjBjRG92TDNCcmFTNWxjMjlrWlcxdllYQndNaTVqYjIwdlkyRXZkR3h6TFdOaExtTmxjakE1CkJnTlZIUjhFTWpBd01DNmdMS0FxaGlob2RIUndPaTh2Y0d0cExtVnpiMlJsYlc5aGNIQXlMbU52YlM5allTOTAKYkhNdFkyRXVZM0pzTUEwR0NTcUdTSWIzRFFFQkN3VUFBNElCQVFBc21TRlpXYll3dGtNQ2pYYnRVdGFCelZFRgp0TXlkc3p0R0VwRE0zaXdNZzFoZyt3T1kydXVYL2xBYmlwSm1vUk5HZnF3NzB5V1p1aHFqdGlzakJRb3JtRVZqCkFkU0d6Uk8yYWlxTnVwTjIwMDNDM2lJaUZVVTEvSGMxbXZxUnNha3BRc0U1clpmY0ZSMlZsanBtT1o3cWM2MjgKTnd6T3NBZWZVVS9SWXBXMUdxSnVhUXdOZGlCYVNPVjdOSXk2VFZBa29henBsS3NzWHZWc1ZIMStFb05JTTNjawpKYUdjQnNsay9JSkVDOTU5endsSlhPWkNmdGo2R1ZIRy80SFNVRDZhdEI3cmMrVWhVZFdxcUZtQ2RnWFVNUWQwCklRUkk5TGFKaktoNjNkNUp2QUdqNXQ0SVJ1dHFVNjZjS1lEWFdkcEtpQ0NmVCtjRDhuYSsrc1pLbU05RQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0t
+>>>    5 |   tpm_client.key: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFb2dJQkFBS0NBUUVBK3daTzE3YmpKTjhxTVVid0hSdUFLQXNEQWxneU9iU04rSS94Z0Nmajg1UnNsenU4CnBTcWE5MFR3d3BQeDMwMG85UWFiSHBENmNsYVpQV0pBbVJmNmVRaFZxaEoybG1KVHl3TEpJZURUa0RuUWkvNE4Ka2hhN2cvb29ZWWJ0WGw5eFBkRVBaZ3AzeExROHJmZmQwZVVpN1FjWUZSRVpoVUxPSmozaGROZVdFR1lUZVJTegpkMHFwdlR5R3d6RVFtcW1xK1BNdmhjT0o5VFpVRTVHYmIzS01kZDQyeUc4S1JHQWZyN1pweUw4NVRtWnYvSW5ECnNSclVwNmFrWWd3cklzb3JhS2N4Uzl6NnRTckNyd2w3c2RxdGwweGhndkpMT1pucUFFNmlwcTFtbXg2b0NUTFoKU2w5b2FjZzFpUVlEeVZBejZValNJT3YvN0VkZzNKSk5BVnMzWHdJREFRQUJBb0lCQUZKWFg5NW5xZnVxem9MSwpnN0h3bHVuTHJ1bUNkN3N4REU3b0hLNU9wM243aW1GVFlZNkdPcjM0bWNjaDAzbk5yQzB2eFF0U1FDem9WaXpxCkFVbVdzWDBwTER4MUFQeFVkYXNHbDJackFzcnhCQVVmeVdETjN5V3NGYm5rRWhIZVdkMk9xYS90cUJyWWluMEEKYlAxUVhkUUZlek5SNEI2ejZyNWxsd0tHUXozT0w2N1poakRQVjlEYWtsS2t0V3htMWJnZmxnZ2JLaGp3Uzl3RwpPME1YZk9acEpwcngrSXVTZlQ5RFg5SUNYOW5HelQ0RThyNDJZS1MyK1JZazh0WmNTeksrcnhFeldaeGEzY2pPCkZObnlXdEFtd2xLbkkwQVBUSWhnUXFWRk9BQXZrNVd1SU5RazI2YlNJSnFBTEpxOFBIbFVKd3RHTmRKcVB1TXcKL1RKVWYvMENnWUVBL1JtYzVLc2lsY2xhNWNWYlZkZCtodG1ocm5LUmpIRGY2YjZCSjhSNnRGNjhUVHV3ckZtZgpPZlZ3cEpZWVdQSmlRQTlkSDJkdGZBSmgvMVRJNEh1S0ZFUVJEZ2dnZG9YcnErbllRcjEvb0pyUFJGaVEvMUFiCmRnSWY0TWppZlZCUHkzMU0wM2FIWnVXSUZtejFUMmsrWHM5UGFRd01Ld2J1Vm54ZWZvNC9HbFVDZ1lFQS9lYWIKaWRIOXdwU2FtVzdoYmIvcm9GemVlci9WbTlmazB1dHJEQmROTGZUeFpiODBVME96M2FhWHI5cC9kaDRBY3FDWQphOVFPaTBYYlloVndBZnFXNXRNRC9wKzZ2b2J5SXEwMTN1N1Q1azdQZEdDaWtVSVJXUHVQTDF1QlBqR3JLREorCmRLUzdhUkhRVWg0WktJVEMzeDJaVGprZFNoN01oS3puMVJwRlp1TUNnWUJ1TDE5WlFaT2Q1L24xZTlUR2F6ay8KRmJISWswSUFCUWZGNTlTc2JtSUk4aEZDQWxGb3h0K0Z5TzlRQjdQenpSbXV6OEYzc1h3OWQ0QVlPMTMwTkhRcApYSFNjU2pkdndkK1dpUWhJRGQxcEd0eE80Y3ZHQ3FiWjJoVHN0Q2U5N0YvQXMvemxObjI5OHdFcTJpWjFldGpYClI2TkhsU0lhL1RwM1ZrK0JBd1kvdlFLQmdENmlMOFpzNWdPbE13b2NuMEc2c1g2cXlqdFByWHMzWS94Z0ZOVXoKdmxkUzhHWGdLQ0ZPTjBXN2ZmbmtsY0xtbmNlcE5GQ05URlV4RTNCN3gxakZuNG9yamZXM0k1TXlxUExDOWVJYgoybXdiRHZRdmpvcjAyR0N5RmQxaDNsMGdWWStoL1MzN0lUeEhKN1BLTnZ5VzI1ZThybi9zZVB3NjRzcnIrSGpLCmRVcHZBb0dBQWgwU1JNSlMrZlJLU0FjTzY4bFRnTW4reUZ3OGUwZ1VCdHZxbW90dTEya3dxL0Z6UEpHM0d3TEYKeGJtbWxML21pcFRRRm1WYVlTaCs2RGFya2phbUg2QXRyeHlqT3lzRUhFb1hHNi9RUFVPUzFaTzRqQTU2QldORgpyUkZDMHlzc3NEVGw2VXZlclZVMkp4YnlPNE5JVE5HOVJ2WklibUI2SmV0amhZMHpvaEE9Ci0tLS0tRU5EIFJTQSBQUklWQVRFIEtFWS0tLS0t
+       6 | kind: Secret
+       7 | metadata:
+       8 |   name: app-secrets
+
+Provide your analysis in the following structured format:
+
+1. **OWASP Category**: Identify the specific OWASP Top 10 (2021) category (e.g., A01:2021 - Broken Access Control). If multiple categories apply, list all.
+2. **CWE Mapping**: Identify the relevant CWE (Common Weakness Enumeration) ID(s).
+3. **CVSS Estimate**: Provide an estimated CVSS v3.1 base score and vector string.
+4. **Severity**: Rate as one of: INFO, WARNING, ERROR.
+5. **Attack Vector**: Describe the specific attack scenario. Include example payloads where applicable.
+6. **Impact**: Describe the potential business and technical impact if exploited, including data confidentiality, integrity, and availability.
+7. **Remediation**: Provide a specific, secure code fix. Show the corrected code.
+8. **Defence in Depth**: Suggest additional security controls beyond the code fix (e.g., WAF rules, input validation layers, security headers).
+9. **References**: List relevant CWE IDs, OWASP links, and Cisco security advisories if applicable.
+2026-03-15 19:04:23 [DEBUG] ======================================================================
+2026-03-15 19:04:23 [DEBUG] Prompt written to temporary file: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt_1ac8c3n4.txt
+2026-03-15 19:04:23 [DEBUG] Executing: llama-cli --hf-repo fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF --hf-file foundation-sec-8b-instruct-q8_0.gguf -c 8192 -ngl -1 -t 6 -p <prompt>
+2026-03-15 19:05:46 [DEBUG] Temporary prompt file cleaned up: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt_1ac8c3n4.txt
+2026-03-15 19:05:46 [INFO] Finding 6/17 complete. Status: success
+2026-03-15 19:05:46 [INFO] Processing finding 7/17...
+2026-03-15 19:05:46 [INFO] Analyzing [WARNING] 'yaml.kubernetes.security.allow-privilege-escalation-no-securitycontext.allow-privilege-escalation-no-securitycontext' at ../../Downloads/GCP-Remote-attestation-master/src/app.yaml:39-39 ...
+2026-03-15 19:05:46 [DEBUG] ======================================================================
+2026-03-15 19:05:46 [DEBUG] LLM PROMPT (Foundation-Sec-8B via llama-cli)
+2026-03-15 19:05:46 [DEBUG] ======================================================================
+2026-03-15 19:05:46 [DEBUG] You are a cybersecurity expert performing a secure code review.
+Your task is to analyze a vulnerability detected by Semgrep and map it to the OWASP Top 10 (2021) framework.
+
+**Rule ID:** yaml.kubernetes.security.allow-privilege-escalation-no-securitycontext.allow-privilege-escalation-no-securitycontext
+**Semgrep Finding:** In Kubernetes, each pod runs in its own isolated environment with its own set of security policies. However, certain container images may contain `setuid` or `setgid` binaries that could allow an attacker to perform privilege escalation and gain access to sensitive resources. To mitigate this risk, it's recommended to add a `securityContext` to the container in the pod, with the parameter `allowPrivilegeEscalation` set to `false`. This will prevent the container from running any privileged processes and limit the impact of any potential attacks. By adding a `securityContext` to your Kubernetes pod, you can help to ensure that your containerized applications are more secure and less vulnerable to privilege escalation attacks.
+
+**Code Snippet:**
+
+      36 |       serviceAccountName: app-service-account
+      37 |       automountServiceAccountToken: true
+      38 |       containers:
+>>>   39 |       - name: app
+      40 |         image: docker.io/salrashid123/tpmds-client@sha256:d21e15b5c66dc0de088db8113834b8fd3967c972dd165fb4998bd5076c212ee8
+      41 |         command:
+      42 |           - /bin/bash
+
+Provide your analysis in the following structured format:
+
+1. **OWASP Category**: Identify the specific OWASP Top 10 (2021) category (e.g., A01:2021 - Broken Access Control). If multiple categories apply, list all.
+2. **CWE Mapping**: Identify the relevant CWE (Common Weakness Enumeration) ID(s).
+3. **CVSS Estimate**: Provide an estimated CVSS v3.1 base score and vector string.
+4. **Severity**: Rate as one of: INFO, WARNING, ERROR.
+5. **Attack Vector**: Describe the specific attack scenario. Include example payloads where applicable.
+6. **Impact**: Describe the potential business and technical impact if exploited, including data confidentiality, integrity, and availability.
+7. **Remediation**: Provide a specific, secure code fix. Show the corrected code.
+8. **Defence in Depth**: Suggest additional security controls beyond the code fix (e.g., WAF rules, input validation layers, security headers).
+9. **References**: List relevant CWE IDs, OWASP links, and Cisco security advisories if applicable.
+2026-03-15 19:05:46 [DEBUG] ======================================================================
+2026-03-15 19:05:46 [DEBUG] Prompt written to temporary file: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt_bhzdkcc1.txt
+2026-03-15 19:05:46 [DEBUG] Executing: llama-cli --hf-repo fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF --hf-file foundation-sec-8b-instruct-q8_0.gguf -c 8192 -ngl -1 -t 6 -p <prompt>
+2026-03-15 19:06:33 [DEBUG] Temporary prompt file cleaned up: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt_bhzdkcc1.txt
+2026-03-15 19:06:33 [INFO] Finding 7/17 complete. Status: success
+2026-03-15 19:06:33 [INFO] Processing finding 8/17...
+2026-03-15 19:06:33 [INFO] Analyzing [WARNING] 'go.lang.security.audit.crypto.missing-ssl-minversion.missing-ssl-minversion' at ../../Downloads/GCP-Remote-attestation-master/src/client/RestWrapperVerifier/RestWrapperVerifier.go:20-23 ...
+2026-03-15 19:06:33 [DEBUG] ======================================================================
+2026-03-15 19:06:33 [DEBUG] LLM PROMPT (Foundation-Sec-8B via llama-cli)
+2026-03-15 19:06:33 [DEBUG] ======================================================================
+2026-03-15 19:06:33 [DEBUG] You are a cybersecurity expert performing a secure code review.
+Your task is to analyze a vulnerability detected by Semgrep and map it to the OWASP Top 10 (2021) framework.
+
+**Rule ID:** go.lang.security.audit.crypto.missing-ssl-minversion.missing-ssl-minversion
+**Semgrep Finding:** `MinVersion` is missing from this TLS configuration.  By default, as of Go 1.22, TLS 1.2 is currently used as the minimum. General purpose web applications should default to TLS 1.3 with all other protocols disabled.  Only where it is known that a web server must support legacy clients with unsupported an insecure browsers (such as Internet Explorer 10), it may be necessary to enable TLS 1.0 to provide support. Add `MinVersion: tls.VersionTLS13' to the TLS configuration to bump the minimum version to TLS 1.3.
+
+**Code Snippet:**
+
+      17 | func GetEKRest(tlsCfg tls.Config, address string, node string) (*verifier.GetEKResponse, error) {
+      18 | 	client := &http.Client{
+      19 | 		Transport: &http.Transport{
+>>>   20 | 			TLSClientConfig: &tls.Config{
+>>>   21 | 				InsecureSkipVerify: true,
+>>>   22 | 				RootCAs:            tlsCfg.RootCAs,
+>>>   23 | 			},
+      24 | 		},
+      25 | 	}
+      26 | 
+
+Provide your analysis in the following structured format:
+
+1. **OWASP Category**: Identify the specific OWASP Top 10 (2021) category (e.g., A01:2021 - Broken Access Control). If multiple categories apply, list all.
+2. **CWE Mapping**: Identify the relevant CWE (Common Weakness Enumeration) ID(s).
+3. **CVSS Estimate**: Provide an estimated CVSS v3.1 base score and vector string.
+4. **Severity**: Rate as one of: INFO, WARNING, ERROR.
+5. **Attack Vector**: Describe the specific attack scenario. Include example payloads where applicable.
+6. **Impact**: Describe the potential business and technical impact if exploited, including data confidentiality, integrity, and availability.
+7. **Remediation**: Provide a specific, secure code fix. Show the corrected code.
+8. **Defence in Depth**: Suggest additional security controls beyond the code fix (e.g., WAF rules, input validation layers, security headers).
+9. **References**: List relevant CWE IDs, OWASP links, and Cisco security advisories if applicable.
+2026-03-15 19:06:33 [DEBUG] ======================================================================
+2026-03-15 19:06:33 [DEBUG] Prompt written to temporary file: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt__jpb4_4l.txt
+2026-03-15 19:06:33 [DEBUG] Executing: llama-cli --hf-repo fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF --hf-file foundation-sec-8b-instruct-q8_0.gguf -c 8192 -ngl -1 -t 6 -p <prompt>
+2026-03-15 19:07:16 [DEBUG] Temporary prompt file cleaned up: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt__jpb4_4l.txt
+2026-03-15 19:07:16 [INFO] Finding 8/17 complete. Status: success
+2026-03-15 19:07:16 [INFO] Processing finding 9/17...
+2026-03-15 19:07:16 [INFO] Analyzing [WARNING] 'go.lang.security.audit.crypto.missing-ssl-minversion.missing-ssl-minversion' at ../../Downloads/GCP-Remote-attestation-master/src/client/RestWrapperVerifier/RestWrapperVerifier.go:44-47 ...
+2026-03-15 19:07:16 [DEBUG] ======================================================================
+2026-03-15 19:07:16 [DEBUG] LLM PROMPT (Foundation-Sec-8B via llama-cli)
+2026-03-15 19:07:16 [DEBUG] ======================================================================
+2026-03-15 19:07:16 [DEBUG] You are a cybersecurity expert performing a secure code review.
+Your task is to analyze a vulnerability detected by Semgrep and map it to the OWASP Top 10 (2021) framework.
+
+**Rule ID:** go.lang.security.audit.crypto.missing-ssl-minversion.missing-ssl-minversion
+**Semgrep Finding:** `MinVersion` is missing from this TLS configuration.  By default, as of Go 1.22, TLS 1.2 is currently used as the minimum. General purpose web applications should default to TLS 1.3 with all other protocols disabled.  Only where it is known that a web server must support legacy clients with unsupported an insecure browsers (such as Internet Explorer 10), it may be necessary to enable TLS 1.0 to provide support. Add `MinVersion: tls.VersionTLS13' to the TLS configuration to bump the minimum version to TLS 1.3.
+
+**Code Snippet:**
+
+      41 | func GetAKRest(tlsCfg tls.Config, address string, AKRequest *verifier.GetAKRequest, node string) (*verifier.GetAKResponse, error) {
+      42 | 	client := &http.Client{
+      43 | 		Transport: &http.Transport{
+>>>   44 | 			TLSClientConfig: &tls.Config{
+>>>   45 | 				InsecureSkipVerify: true,
+>>>   46 | 				RootCAs:            tlsCfg.RootCAs,
+>>>   47 | 			},
+      48 | 		},
+      49 | 	}
+      50 | 	requestJSON, err := json.Marshal(AKRequest)
+
+Provide your analysis in the following structured format:
+
+1. **OWASP Category**: Identify the specific OWASP Top 10 (2021) category (e.g., A01:2021 - Broken Access Control). If multiple categories apply, list all.
+2. **CWE Mapping**: Identify the relevant CWE (Common Weakness Enumeration) ID(s).
+3. **CVSS Estimate**: Provide an estimated CVSS v3.1 base score and vector string.
+4. **Severity**: Rate as one of: INFO, WARNING, ERROR.
+5. **Attack Vector**: Describe the specific attack scenario. Include example payloads where applicable.
+6. **Impact**: Describe the potential business and technical impact if exploited, including data confidentiality, integrity, and availability.
+7. **Remediation**: Provide a specific, secure code fix. Show the corrected code.
+8. **Defence in Depth**: Suggest additional security controls beyond the code fix (e.g., WAF rules, input validation layers, security headers).
+9. **References**: List relevant CWE IDs, OWASP links, and Cisco security advisories if applicable.
+2026-03-15 19:07:16 [DEBUG] ======================================================================
+2026-03-15 19:07:16 [DEBUG] Prompt written to temporary file: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt_4951j_ch.txt
+2026-03-15 19:07:16 [DEBUG] Executing: llama-cli --hf-repo fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF --hf-file foundation-sec-8b-instruct-q8_0.gguf -c 8192 -ngl -1 -t 6 -p <prompt>
+2026-03-15 19:07:56 [DEBUG] Temporary prompt file cleaned up: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt_4951j_ch.txt
+2026-03-15 19:07:56 [INFO] Finding 9/17 complete. Status: success
+2026-03-15 19:07:56 [INFO] Processing finding 10/17...
+2026-03-15 19:07:56 [INFO] Analyzing [WARNING] 'go.lang.security.audit.crypto.missing-ssl-minversion.missing-ssl-minversion' at ../../Downloads/GCP-Remote-attestation-master/src/client/RestWrapperVerifier/RestWrapperVerifier.go:68-71 ...
+2026-03-15 19:07:56 [DEBUG] ======================================================================
+2026-03-15 19:07:56 [DEBUG] LLM PROMPT (Foundation-Sec-8B via llama-cli)
+2026-03-15 19:07:56 [DEBUG] ======================================================================
+2026-03-15 19:07:56 [DEBUG] You are a cybersecurity expert performing a secure code review.
+Your task is to analyze a vulnerability detected by Semgrep and map it to the OWASP Top 10 (2021) framework.
+
+**Rule ID:** go.lang.security.audit.crypto.missing-ssl-minversion.missing-ssl-minversion
+**Semgrep Finding:** `MinVersion` is missing from this TLS configuration.  By default, as of Go 1.22, TLS 1.2 is currently used as the minimum. General purpose web applications should default to TLS 1.3 with all other protocols disabled.  Only where it is known that a web server must support legacy clients with unsupported an insecure browsers (such as Internet Explorer 10), it may be necessary to enable TLS 1.0 to provide support. Add `MinVersion: tls.VersionTLS13' to the TLS configuration to bump the minimum version to TLS 1.3.
+
+**Code Snippet:**
+
+      65 | func AttestRest(tlsCfg tls.Config, address string, AttReq *verifier.AttestRequest, node string) (*verifier.AttestResponse, error) {
+      66 | 	client := &http.Client{
+      67 | 		Transport: &http.Transport{
+>>>   68 | 			TLSClientConfig: &tls.Config{
+>>>   69 | 				InsecureSkipVerify: true,
+>>>   70 | 				RootCAs:            tlsCfg.RootCAs,
+>>>   71 | 			},
+      72 | 		},
+      73 | 	}
+      74 | 	requestJSON, err := json.Marshal(AttReq)
+
+Provide your analysis in the following structured format:
+
+1. **OWASP Category**: Identify the specific OWASP Top 10 (2021) category (e.g., A01:2021 - Broken Access Control). If multiple categories apply, list all.
+2. **CWE Mapping**: Identify the relevant CWE (Common Weakness Enumeration) ID(s).
+3. **CVSS Estimate**: Provide an estimated CVSS v3.1 base score and vector string.
+4. **Severity**: Rate as one of: INFO, WARNING, ERROR.
+5. **Attack Vector**: Describe the specific attack scenario. Include example payloads where applicable.
+6. **Impact**: Describe the potential business and technical impact if exploited, including data confidentiality, integrity, and availability.
+7. **Remediation**: Provide a specific, secure code fix. Show the corrected code.
+8. **Defence in Depth**: Suggest additional security controls beyond the code fix (e.g., WAF rules, input validation layers, security headers).
+9. **References**: List relevant CWE IDs, OWASP links, and Cisco security advisories if applicable.
+2026-03-15 19:07:56 [DEBUG] ======================================================================
+2026-03-15 19:07:56 [DEBUG] Prompt written to temporary file: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt_xt4c4uav.txt
+2026-03-15 19:07:56 [DEBUG] Executing: llama-cli --hf-repo fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF --hf-file foundation-sec-8b-instruct-q8_0.gguf -c 8192 -ngl -1 -t 6 -p <prompt>
+2026-03-15 19:08:37 [DEBUG] Temporary prompt file cleaned up: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt_xt4c4uav.txt
+2026-03-15 19:08:37 [INFO] Finding 10/17 complete. Status: success
+2026-03-15 19:08:37 [INFO] Processing finding 11/17...
+2026-03-15 19:08:37 [INFO] Analyzing [WARNING] 'go.lang.security.audit.crypto.missing-ssl-minversion.missing-ssl-minversion' at ../../Downloads/GCP-Remote-attestation-master/src/client/RestWrapperVerifier/RestWrapperVerifier.go:91-94 ...
+2026-03-15 19:08:37 [DEBUG] ======================================================================
+2026-03-15 19:08:37 [DEBUG] LLM PROMPT (Foundation-Sec-8B via llama-cli)
+2026-03-15 19:08:37 [DEBUG] ======================================================================
+2026-03-15 19:08:37 [DEBUG] You are a cybersecurity expert performing a secure code review.
+Your task is to analyze a vulnerability detected by Semgrep and map it to the OWASP Top 10 (2021) framework.
+
+**Rule ID:** go.lang.security.audit.crypto.missing-ssl-minversion.missing-ssl-minversion
+**Semgrep Finding:** `MinVersion` is missing from this TLS configuration.  By default, as of Go 1.22, TLS 1.2 is currently used as the minimum. General purpose web applications should default to TLS 1.3 with all other protocols disabled.  Only where it is known that a web server must support legacy clients with unsupported an insecure browsers (such as Internet Explorer 10), it may be necessary to enable TLS 1.0 to provide support. Add `MinVersion: tls.VersionTLS13' to the TLS configuration to bump the minimum version to TLS 1.3.
+
+**Code Snippet:**
+
+      88 | func QuoteRest(tlsCfg tls.Config, address string, QuoteReq *verifier.QuoteRequest, node string) (*verifier.QuoteResponse, error) {
+      89 | 	client := &http.Client{
+      90 | 		Transport: &http.Transport{
+>>>   91 | 			TLSClientConfig: &tls.Config{
+>>>   92 | 				InsecureSkipVerify: true,
+>>>   93 | 				RootCAs:            tlsCfg.RootCAs,
+>>>   94 | 			},
+      95 | 		},
+      96 | 	}
+      97 | 	requestJSON, err := json.Marshal(QuoteReq)
+
+Provide your analysis in the following structured format:
+
+1. **OWASP Category**: Identify the specific OWASP Top 10 (2021) category (e.g., A01:2021 - Broken Access Control). If multiple categories apply, list all.
+2. **CWE Mapping**: Identify the relevant CWE (Common Weakness Enumeration) ID(s).
+3. **CVSS Estimate**: Provide an estimated CVSS v3.1 base score and vector string.
+4. **Severity**: Rate as one of: INFO, WARNING, ERROR.
+5. **Attack Vector**: Describe the specific attack scenario. Include example payloads where applicable.
+6. **Impact**: Describe the potential business and technical impact if exploited, including data confidentiality, integrity, and availability.
+7. **Remediation**: Provide a specific, secure code fix. Show the corrected code.
+8. **Defence in Depth**: Suggest additional security controls beyond the code fix (e.g., WAF rules, input validation layers, security headers).
+9. **References**: List relevant CWE IDs, OWASP links, and Cisco security advisories if applicable.
+2026-03-15 19:08:37 [DEBUG] ======================================================================
+2026-03-15 19:08:37 [DEBUG] Prompt written to temporary file: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt_omatx0qt.txt
+2026-03-15 19:08:37 [DEBUG] Executing: llama-cli --hf-repo fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF --hf-file foundation-sec-8b-instruct-q8_0.gguf -c 8192 -ngl -1 -t 6 -p <prompt>
+2026-03-15 19:09:20 [DEBUG] Temporary prompt file cleaned up: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt_omatx0qt.txt
+2026-03-15 19:09:20 [INFO] Finding 11/17 complete. Status: success
+2026-03-15 19:09:20 [INFO] Processing finding 12/17...
+2026-03-15 19:09:20 [INFO] Analyzing [WARNING] 'go.lang.security.audit.crypto.math_random.math-random-used' at ../../Downloads/GCP-Remote-attestation-master/src/client/grpc_verifier.go:31-31 ...
+2026-03-15 19:09:20 [DEBUG] ======================================================================
+2026-03-15 19:09:20 [DEBUG] LLM PROMPT (Foundation-Sec-8B via llama-cli)
+2026-03-15 19:09:20 [DEBUG] ======================================================================
+2026-03-15 19:09:20 [DEBUG] You are a cybersecurity expert performing a secure code review.
+Your task is to analyze a vulnerability detected by Semgrep and map it to the OWASP Top 10 (2021) framework.
+
+**Rule ID:** go.lang.security.audit.crypto.math_random.math-random-used
+**Semgrep Finding:** Do not use `math/rand`. Use `crypto/rand` instead.
+
+**Code Snippet:**
+
+      28 | 	"hash"
+      29 | 	"io/ioutil"
+      30 | 	"main/RestWrapperVerifier"
+>>>   31 | 	mrnd "math/rand"
+      32 | 	"os"
+      33 | 	"strconv"
+      34 | 	"strings"
+
+Provide your analysis in the following structured format:
+
+1. **OWASP Category**: Identify the specific OWASP Top 10 (2021) category (e.g., A01:2021 - Broken Access Control). If multiple categories apply, list all.
+2. **CWE Mapping**: Identify the relevant CWE (Common Weakness Enumeration) ID(s).
+3. **CVSS Estimate**: Provide an estimated CVSS v3.1 base score and vector string.
+4. **Severity**: Rate as one of: INFO, WARNING, ERROR.
+5. **Attack Vector**: Describe the specific attack scenario. Include example payloads where applicable.
+6. **Impact**: Describe the potential business and technical impact if exploited, including data confidentiality, integrity, and availability.
+7. **Remediation**: Provide a specific, secure code fix. Show the corrected code.
+8. **Defence in Depth**: Suggest additional security controls beyond the code fix (e.g., WAF rules, input validation layers, security headers).
+9. **References**: List relevant CWE IDs, OWASP links, and Cisco security advisories if applicable.
+2026-03-15 19:09:20 [DEBUG] ======================================================================
+2026-03-15 19:09:20 [DEBUG] Prompt written to temporary file: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt_m365g85c.txt
+2026-03-15 19:09:20 [DEBUG] Executing: llama-cli --hf-repo fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF --hf-file foundation-sec-8b-instruct-q8_0.gguf -c 8192 -ngl -1 -t 6 -p <prompt>
+2026-03-15 19:09:52 [DEBUG] Temporary prompt file cleaned up: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt_m365g85c.txt
+2026-03-15 19:09:52 [INFO] Finding 12/17 complete. Status: success
+2026-03-15 19:09:52 [INFO] Processing finding 13/17...
+2026-03-15 19:09:52 [INFO] Analyzing [WARNING] 'go.lang.security.audit.crypto.use_of_weak_crypto.use-of-sha1' at ../../Downloads/GCP-Remote-attestation-master/src/client/grpc_verifier.go:382-382 ...
+2026-03-15 19:09:52 [DEBUG] ======================================================================
+2026-03-15 19:09:52 [DEBUG] LLM PROMPT (Foundation-Sec-8B via llama-cli)
+2026-03-15 19:09:52 [DEBUG] ======================================================================
+2026-03-15 19:09:52 [DEBUG] You are a cybersecurity expert performing a secure code review.
+Your task is to analyze a vulnerability detected by Semgrep and map it to the OWASP Top 10 (2021) framework.
+
+**Rule ID:** go.lang.security.audit.crypto.use_of_weak_crypto.use-of-sha1
+**Semgrep Finding:** Detected SHA1 hash algorithm which is considered insecure. SHA1 is not collision resistant and is therefore not suitable as a cryptographic signature. Use SHA256 or SHA3 instead.
+
+**Code Snippet:**
+
+     379 | 	var hsh hash.Hash
+     380 | 	// https://github.com/tpm2-software/tpm2-tools/blob/83f6f8ac5de5a989d447d8791525eb6b6472e6ac/lib/tpm2_openssl.c#L206
+     381 | 	if algo == tpm.HashAlgo_SHA1 {
+>>>  382 | 		hsh = sha1.New()
+     383 | 	}
+     384 | 	if algo == tpm.HashAlgo_SHA256 {
+     385 | 		hsh = sha256.New()
+
+Provide your analysis in the following structured format:
+
+1. **OWASP Category**: Identify the specific OWASP Top 10 (2021) category (e.g., A01:2021 - Broken Access Control). If multiple categories apply, list all.
+2. **CWE Mapping**: Identify the relevant CWE (Common Weakness Enumeration) ID(s).
+3. **CVSS Estimate**: Provide an estimated CVSS v3.1 base score and vector string.
+4. **Severity**: Rate as one of: INFO, WARNING, ERROR.
+5. **Attack Vector**: Describe the specific attack scenario. Include example payloads where applicable.
+6. **Impact**: Describe the potential business and technical impact if exploited, including data confidentiality, integrity, and availability.
+7. **Remediation**: Provide a specific, secure code fix. Show the corrected code.
+8. **Defence in Depth**: Suggest additional security controls beyond the code fix (e.g., WAF rules, input validation layers, security headers).
+9. **References**: List relevant CWE IDs, OWASP links, and Cisco security advisories if applicable.
+2026-03-15 19:09:52 [DEBUG] ======================================================================
+2026-03-15 19:09:52 [DEBUG] Prompt written to temporary file: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt_pz4pwn9a.txt
+2026-03-15 19:09:52 [DEBUG] Executing: llama-cli --hf-repo fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF --hf-file foundation-sec-8b-instruct-q8_0.gguf -c 8192 -ngl -1 -t 6 -p <prompt>
+2026-03-15 19:10:23 [DEBUG] Temporary prompt file cleaned up: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt_pz4pwn9a.txt
+2026-03-15 19:10:23 [INFO] Finding 13/17 complete. Status: success
+2026-03-15 19:10:23 [INFO] Processing finding 14/17...
+2026-03-15 19:10:23 [INFO] Analyzing [WARNING] 'yaml.kubernetes.security.secrets-in-config-file.secrets-in-config-file' at ../../Downloads/GCP-Remote-attestation-master/src/daemonset.yaml:3-3 ...
+2026-03-15 19:10:23 [DEBUG] ======================================================================
+2026-03-15 19:10:23 [DEBUG] LLM PROMPT (Foundation-Sec-8B via llama-cli)
+2026-03-15 19:10:23 [DEBUG] ======================================================================
+2026-03-15 19:10:23 [DEBUG] You are a cybersecurity expert performing a secure code review.
+Your task is to analyze a vulnerability detected by Semgrep and map it to the OWASP Top 10 (2021) framework.
+
+**Rule ID:** yaml.kubernetes.security.secrets-in-config-file.secrets-in-config-file
+**Semgrep Finding:** Secrets (LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVSRENDQXl5Z0F3SUJBZ0lCTHpBTkJna3Foa2lHOXcwQkFRc0ZBREJYTVFzd0NRWURWUVFHRXdKVlV6RVAKTUEwR0ExVUVDZ3dHUjI5dloyeGxNUk13RVFZRFZRUUxEQXBGYm5SbGNuQnlhWE5sTVNJd0lBWURWUVFEREJsRgpiblJsY25CeWFYTmxJRk4xWW05eVpHbHVZWFJsSUVOQk1CNFhEVEl5TVRBek1URTBOVE14TlZvWERUSTFNREl3Ck56RTBOVE14TlZvd1ZqRUxNQWtHQTFVRUJoTUNWVk14RHpBTkJnTlZCQW9NQmtkdmIyZHNaVEVUTUJFR0ExVUUKQ3d3S1JXNTBaWEp3Y21selpURWhNQjhHQTFVRUF3d1lZWFIwWlhOMGIzSXVaWE52WkdWdGIyRndjREl1WTI5dApNSUlCSWpBTkJna3Foa2lHOXcwQkFRRUZBQU9DQVE4QU1JSUJDZ0tDQVFFQTFDTHR1QmY3U0d3ZG1nRE5lRzFvCmpiQ3R0Q1JzdTRBK1ptVWc5UktUSkZvRTkyYXhoY01pblB1SFZqTFZuTEVRa3BpTUhXc3NobUpWaTZXdUlEQkYKcCtRcVJVVUNZdk5Qc0M3cGJNUk5mQ2xqVTkrZy9XRVZhaXEyc3ZRSGszMnpUMDV1N0dWb1hJRU1HYndFWm1KdgprYk1ONlZDWEdiSVlCMzlSc0NucC9vcXpwRVZnSW1oYW10T3RWdC9QaWE4S2xBZ3JUb29SdjZPYmlJVW42UXhXCnRxT2ozelBpcFVsU1dndDhLeHBTVW85UXo1TUdlNDA5ZW4zMDBueDdqaFZyKzhieXdhekxyRmVDODI0ZXRlSVQKOVpkWkxTVThHQWlBd1pva21pZnFWeGxiMnU1QTJhTlk5ZUdWMFdUZWEvYVk5a2p6UFhZcVI1MGVFdjZvL0dzcwo5UUlEQVFBQm80SUJHakNDQVJZd0RnWURWUjBQQVFIL0JBUURBZ2VBTUFrR0ExVWRFd1FDTUFBd0V3WURWUjBsCkJBd3dDZ1lJS3dZQkJRVUhBd0V3SFFZRFZSME9CQllFRkN5SHQxSzlsUmNMZFRmNDF2S1ZSTTU5RkFZdU1COEcKQTFVZEl3UVlNQmFBRkxlNnNBS2g1NzQweHNFRlhHWjQ1YnRUWGFGVU1FUUdDQ3NHQVFVRkJ3RUJCRGd3TmpBMApCZ2dyQmdFRkJRY3dBb1lvYUhSMGNEb3ZMM0JyYVM1bGMyOWtaVzF2WVhCd01pNWpiMjB2WTJFdmRHeHpMV05oCkxtTmxjakE1QmdOVkhSOEVNakF3TUM2Z0xLQXFoaWhvZEhSd09pOHZjR3RwTG1WemIyUmxiVzloY0hBeUxtTnYKYlM5allTOTBiSE10WTJFdVkzSnNNQ01HQTFVZEVRUWNNQnFDR0dGMGRHVnpkRzl5TG1WemIyUmxiVzloY0hBeQpMbU52YlRBTkJna3Foa2lHOXcwQkFRc0ZBQU9DQVFFQWxaamNlZVVlRmFqMGFiRHN3eHovU3MzaUVIaGR4RXZUCmxaMnJFempTRUdZVDNNRGRqL09qZHgxYW9WeG1mbmF2dEwrcVlTZDIxZnNzcnZNSjQyajF3S2h2bHFtR0N5TEYKOVRVN1NqSW9zWEJuSXhwS1dLU3lad0pDYmNYV1hTTTEvd05uSkZRNkxSYjlDVXJ0cy9VOWxPMEdhc3N0UkhwUgpqSHFBcTZvV3VhYmcwTjFOc3NTSmxPVVV3MGo5b3RzM1dqMXVOTU1uZ0pOcllEVy82V1haR2h0Y08vbU5obERECm40Z1gwNE9CWWJ0VEp3UXI0TmN5T1o5VjgyUU4walVQdDhZL1hpQmpGZjBhYkJUVlBRaCt5YU96T1plb2s1TTAKaWluV2dLNnNmU0R4Q0RmSEcyMkZHSExtcXlrb0l0TjYvRVB0QWRqTS9QakFoWVlQODdwak9RPT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUt... (truncated 8 more characters)) should not be stored in infrastructure as code files. Use an alternative such as Bitnami Sealed Secrets or KSOPS to encrypt Kubernetes Secrets. 
+
+**Code Snippet:**
+
+       1 | apiVersion: v1
+       2 | data:
+>>>    3 |   server_crt.pem: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVSRENDQXl5Z0F3SUJBZ0lCTHpBTkJna3Foa2lHOXcwQkFRc0ZBREJYTVFzd0NRWURWUVFHRXdKVlV6RVAKTUEwR0ExVUVDZ3dHUjI5dloyeGxNUk13RVFZRFZRUUxEQXBGYm5SbGNuQnlhWE5sTVNJd0lBWURWUVFEREJsRgpiblJsY25CeWFYTmxJRk4xWW05eVpHbHVZWFJsSUVOQk1CNFhEVEl5TVRBek1URTBOVE14TlZvWERUSTFNREl3Ck56RTBOVE14TlZvd1ZqRUxNQWtHQTFVRUJoTUNWVk14RHpBTkJnTlZCQW9NQmtkdmIyZHNaVEVUTUJFR0ExVUUKQ3d3S1JXNTBaWEp3Y21selpURWhNQjhHQTFVRUF3d1lZWFIwWlhOMGIzSXVaWE52WkdWdGIyRndjREl1WTI5dApNSUlCSWpBTkJna3Foa2lHOXcwQkFRRUZBQU9DQVE4QU1JSUJDZ0tDQVFFQTFDTHR1QmY3U0d3ZG1nRE5lRzFvCmpiQ3R0Q1JzdTRBK1ptVWc5UktUSkZvRTkyYXhoY01pblB1SFZqTFZuTEVRa3BpTUhXc3NobUpWaTZXdUlEQkYKcCtRcVJVVUNZdk5Qc0M3cGJNUk5mQ2xqVTkrZy9XRVZhaXEyc3ZRSGszMnpUMDV1N0dWb1hJRU1HYndFWm1KdgprYk1ONlZDWEdiSVlCMzlSc0NucC9vcXpwRVZnSW1oYW10T3RWdC9QaWE4S2xBZ3JUb29SdjZPYmlJVW42UXhXCnRxT2ozelBpcFVsU1dndDhLeHBTVW85UXo1TUdlNDA5ZW4zMDBueDdqaFZyKzhieXdhekxyRmVDODI0ZXRlSVQKOVpkWkxTVThHQWlBd1pva21pZnFWeGxiMnU1QTJhTlk5ZUdWMFdUZWEvYVk5a2p6UFhZcVI1MGVFdjZvL0dzcwo5UUlEQVFBQm80SUJHakNDQVJZd0RnWURWUjBQQVFIL0JBUURBZ2VBTUFrR0ExVWRFd1FDTUFBd0V3WURWUjBsCkJBd3dDZ1lJS3dZQkJRVUhBd0V3SFFZRFZSME9CQllFRkN5SHQxSzlsUmNMZFRmNDF2S1ZSTTU5RkFZdU1COEcKQTFVZEl3UVlNQmFBRkxlNnNBS2g1NzQweHNFRlhHWjQ1YnRUWGFGVU1FUUdDQ3NHQVFVRkJ3RUJCRGd3TmpBMApCZ2dyQmdFRkJRY3dBb1lvYUhSMGNEb3ZMM0JyYVM1bGMyOWtaVzF2WVhCd01pNWpiMjB2WTJFdmRHeHpMV05oCkxtTmxjakE1QmdOVkhSOEVNakF3TUM2Z0xLQXFoaWhvZEhSd09pOHZjR3RwTG1WemIyUmxiVzloY0hBeUxtTnYKYlM5allTOTBiSE10WTJFdVkzSnNNQ01HQTFVZEVRUWNNQnFDR0dGMGRHVnpkRzl5TG1WemIyUmxiVzloY0hBeQpMbU52YlRBTkJna3Foa2lHOXcwQkFRc0ZBQU9DQVFFQWxaamNlZVVlRmFqMGFiRHN3eHovU3MzaUVIaGR4RXZUCmxaMnJFempTRUdZVDNNRGRqL09qZHgxYW9WeG1mbmF2dEwrcVlTZDIxZnNzcnZNSjQyajF3S2h2bHFtR0N5TEYKOVRVN1NqSW9zWEJuSXhwS1dLU3lad0pDYmNYV1hTTTEvd05uSkZRNkxSYjlDVXJ0cy9VOWxPMEdhc3N0UkhwUgpqSHFBcTZvV3VhYmcwTjFOc3NTSmxPVVV3MGo5b3RzM1dqMXVOTU1uZ0pOcllEVy82V1haR2h0Y08vbU5obERECm40Z1gwNE9CWWJ0VEp3UXI0TmN5T1o5VjgyUU4walVQdDhZL1hpQmpGZjBhYkJUVlBRaCt5YU96T1plb2s1TTAKaWluV2dLNnNmU0R4Q0RmSEcyMkZHSExtcXlrb0l0TjYvRVB0QWRqTS9QakFoWVlQODdwak9RPT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQ==
+       4 |   server_key.pem: LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUV2QUlCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQktZd2dnU2lBZ0VBQW9JQkFRRFVJdTI0Ri90SWJCMmEKQU0xNGJXaU5zSzIwSkd5N2dENW1aU0QxRXBNa1dnVDNackdGd3lLYys0ZFdNdFdjc1JDU21Jd2RheXlHWWxXTApwYTRnTUVXbjVDcEZSUUppODArd0x1bHN4RTE4S1dOVDM2RDlZUlZxS3JheTlBZVRmYk5QVG03c1pXaGNnUXdaCnZBUm1ZbStSc3czcFVKY1pzaGdIZjFHd0tlbitpck9rUldBaWFGcWEwNjFXMzgrSnJ3cVVDQ3RPaWhHL281dUkKaFNmcERGYTJvNlBmTStLbFNWSmFDM3dyR2xKU2oxRFBrd1o3alQxNmZmVFNmSHVPRld2N3h2TEJyTXVzVjRMegpiaDYxNGhQMWwxa3RKVHdZQ0lEQm1pU2FKK3BYR1Z2YTdrRFpvMWoxNFpYUlpONXI5cGoyU1BNOWRpcEhuUjRTCi9xajhheXoxQWdNQkFBRUNnZ0VBQU4vTnBINVVKQWN1czdiYlRKV0ExK0trUTBqZmVpeXNDbjU4c3JNd3BZdjAKYk1qcmVZa1FGYlJkL3FveUlnQkRJMDR3ZDZJOGhQenNsdFBTNGt3OTlwUS9ZMWt4TlJOYWRFMVdoaGhQVnhxOApPaVBZQ3BYeGxydUFmMm9pTk52N1Z2RS9Ea2VEQ2xjNEk2RllKYUdKWXdEcFVWay93aW52Sk9yRC9WVklPRlc3CjZPVzlsK0FXZ3FnYzloQXdLLzZsVkxaTjNOSEtYZUd3eUZDazdCdUJRM0tUVWJDdllmMjkxeEhyU2RPNll5L2sKSmdqVlYzM0pRTnZXK2NRKzB6MzliRGdwZ1lIMU9VdmdwUTRkZW5PY1lMaFNFOTlSU2FJcjJOQVlhOXg0Y0VNWQpOT3NDdVR4TG1ZWTJHOWdEbTVTWFRta0tKLy8wQzNqK3ZseFlkREdOMlFLQmdRRHFjeHJ6SmE5N3lTQXZISkg3CjdYTGhjbFl1S2VrVU9BZThUSU9UVVpRQjVvMjR2UFBmdmRvOXJEWkJUY3BFcHk0VmhhbjYzeDdTWHQyaG1mb2EKTUd5eHZiemxMSFFxRlhFcjVRN21XaW5BYThsT3praXdIRktOUUJBUjNBbExwZjZwNDY5cFdLMSs2T0xZVGllVwpvemtRNjFJaFhBNVpTYnZsMkVtWThMMWgzUUtCZ1FEbm9zUVE3M0E3RlFvd2FsaFluRlF1S2R4cDN3Mm94VDZDCnUvVUlpMS8zcHUxMSt0VEJhZlpQWTBKeVVWU1czM3dWMXYvOWV2b25NdXNnTERid1dJcks4b1o3aC94TlRpS0IKZFNBOEtsalZaWmtuQksxNThRSGdrRjFoaU9mQlRobmJHMHVBNzhNMyt3SEdFZTdrSzNIanF1Y2QvTW9kTk5GTAp6QW9taFNlaCtRS0JnQlZYc1NaZFVlSkU1dWNqQks4WWFKTFpZN3NFR2JHN2dBakdObHdjMndwcFFKR0dzZlMyClJiM0RoWlRnVGY5OThKWUkrdlpaaFdiRk9BdlVCbzZIeGYxUU5uZnVXZ3pTc3VDNkUyY280aEFnUDgwcXZqYzUKL05IYStSdUhHbG1Hbk80K1NlT2ZMUHdXbXoveHJXenJJdkRGVzA2cUlLeEVLQlMrWWNUSWRaVUpBb0dBYVlHVwo0c3ZkQjl4R2Z0VUJscUxtS1B6Q082cndrczM4OGhsZ3U5cVlCTHFROEtzbW0wNkRkWmVWblhKMElDQjlhWWs3Cm9wNlFNS2lkdGxMTlYxNU5JYkdrRmNKVDVuWlBlejM1Ujg1V0ZpVW54RUQ2TDAvYWRnbnJydEJvRjRGV2Y1bUkKSTV1U0JQNmN5VFpENU1QeEpTMGtCbUd0UWU1YjRyVjJiaU02Y1NrQ2dZQi9DcW92ZHFlRWpJZ2JtcDBVNTR0bgo5ek1VT0tJT1o5RU5teWJHYTNtbWVzYXZNVHlIS1ZOaDFsaVJ0NFBIMld5MnM5Q1gxT2lYSDl3NGRUS1ZSdVBoCmMxMzgvWFdoaEVESmtPYkxBL0tkdFhEVHFvOUsydWFOTi96Z3lBZnRaREs5NC9TQlVvdU90eTBLZXBkUXovNUkKeGN1NU0wTGZtNmZWc0dMRC9xRFZ3Zz09Ci0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS0=
+       5 |   root.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVEVENDQXZXZ0F3SUJBZ0lCQWpBTkJna3Foa2lHOXcwQkFRc0ZBREJRTVFzd0NRWURWUVFHRXdKVlV6RVAKTUEwR0ExVUVDZ3dHUjI5dloyeGxNUk13RVFZRFZRUUxEQXBGYm5SbGNuQnlhWE5sTVJzd0dRWURWUVFEREJKRgpiblJsY25CeWFYTmxJRkp2YjNRZ1EwRXdIaGNOTWpJd01UQTVNakl3TlRReldoY05Nekl3TVRBNU1qSXdOVFF6CldqQlhNUXN3Q1FZRFZRUUdFd0pWVXpFUE1BMEdBMVVFQ2d3R1IyOXZaMnhsTVJNd0VRWURWUVFMREFwRmJuUmwKY25CeWFYTmxNU0l3SUFZRFZRUUREQmxGYm5SbGNuQnlhWE5sSUZOMVltOXlaR2x1WVhSbElFTkJNSUlCSWpBTgpCZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUF6UUVTdVlySjVVdlZ6Tmw2SzlITDJ3SWpLcGkxClptVU5ObERvbndJRy84T3FwcHY4TGw1NXVLNUxzUW5QRVBqaXU2ZHhlTzdMSC9ZTVpESVpNWVNuNjI2UUtTNmMKQlE2N1dXSHAyeHZiNHpYSXBqbndMdDZGWCsrcHM4eVpOd1BuVDZ5a3pVVWRUZ3ZEUEh6aXNjcXY4aUJpTkp2MAp6c21UOXN5Wk5mWHlGTU1RVlB2SWxFN2hCNDV4akdHbko1ekhTV3JJWHowaWs0Smg3SUJSaE00TE03a2k3dVZQCnE2MTk1Y0I2M0w5SEh3UnpmcGFHYnVzcHRFeW1SYm5qVFlFcnUveElISDcxSlJsQkpLSTZzNWZ4MWlhQXpPSHcKNCtiUU9zdmZjM2xyNW5zeURPUHVrdm5lM3JMU1VQa2dTWUx0bEV2UGV3cDM1d0hpWGxEc0VnTXM3d0lEQVFBQgpvNEhxTUlIbk1BNEdBMVVkRHdFQi93UUVBd0lCQmpBU0JnTlZIUk1CQWY4RUNEQUdBUUgvQWdFQU1CMEdBMVVkCkRnUVdCQlMzdXJBQ29lZStOTWJCQlZ4bWVPVzdVMTJoVkRBZkJnTlZIU01FR0RBV2dCUjhIRnZvUHJNekNaYVMKTXRoL1JML01qSk9ja2pCRkJnZ3JCZ0VGQlFjQkFRUTVNRGN3TlFZSUt3WUJCUVVITUFLR0tXaDBkSEE2THk5dwphMmt1WlhOdlpHVnRiMkZ3Y0RJdVkyOXRMMk5oTDNKdmIzUXRZMkV1WTJWeU1Eb0dBMVVkSHdRek1ERXdMNkF0Cm9DdUdLV2gwZEhBNkx5OXdhMmt1WlhOdlpHVnRiMkZ3Y0RJdVkyOXRMMk5oTDNKdmIzUXRZMkV1WTNKc01BMEcKQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUURDcnJBd2RlUlFNb3Z1MDB3czhJM3JlVUlNRWR0c0Z3TFJTaHUwZ2dWaApHSE1IMXZHRHBkUkpvYVNwQ0dkQ2NQdjFJQTBCa0w2OTY5ZGYxR0RVeFFPV2JpTGFqeVE1UzZmVkZnWi95SWJuCjNTek13N0R1YmlnMmk5eEpvOWxhUHBqampNL2dGNmJCU3hkaG9MVUtMRmYwZTgyRkN1QVBYc2tlaVc3QmMxWEIKM3VpNHhnUE5WejNUSHU4TWE5ei9mVEpSb2hyQzh0MUMvcGFiN1RRcGNRUjZYa1JyWDVTYi9NTTZUbkZldzdzRAo1Y3VGVDdvL0R2YldUNDIvVVAybnVOaTU5MVRJR1lESkJDS0JxbmQwQUg2UnorVlR5ZVJVVnA0ajIxRXh0ekwwCkpLbU4xUytkbVA1VzZQMUVWK3p0RWxsS0VWM04vZTZyNjU1d2xERy8weTdHCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0=
+       6 | kind: Secret
+
+Provide your analysis in the following structured format:
+
+1. **OWASP Category**: Identify the specific OWASP Top 10 (2021) category (e.g., A01:2021 - Broken Access Control). If multiple categories apply, list all.
+2. **CWE Mapping**: Identify the relevant CWE (Common Weakness Enumeration) ID(s).
+3. **CVSS Estimate**: Provide an estimated CVSS v3.1 base score and vector string.
+4. **Severity**: Rate as one of: INFO, WARNING, ERROR.
+5. **Attack Vector**: Describe the specific attack scenario. Include example payloads where applicable.
+6. **Impact**: Describe the potential business and technical impact if exploited, including data confidentiality, integrity, and availability.
+7. **Remediation**: Provide a specific, secure code fix. Show the corrected code.
+8. **Defence in Depth**: Suggest additional security controls beyond the code fix (e.g., WAF rules, input validation layers, security headers).
+9. **References**: List relevant CWE IDs, OWASP links, and Cisco security advisories if applicable.
+2026-03-15 19:10:23 [DEBUG] ======================================================================
+2026-03-15 19:10:23 [DEBUG] Prompt written to temporary file: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt_1afhf6uo.txt
+2026-03-15 19:10:23 [DEBUG] Executing: llama-cli --hf-repo fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF --hf-file foundation-sec-8b-instruct-q8_0.gguf -c 8192 -ngl -1 -t 6 -p <prompt>
+2026-03-15 19:11:41 [DEBUG] Temporary prompt file cleaned up: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt_1afhf6uo.txt
+2026-03-15 19:11:41 [INFO] Finding 14/17 complete. Status: success
+2026-03-15 19:11:41 [INFO] Processing finding 15/17...
+2026-03-15 19:11:41 [INFO] Analyzing [WARNING] 'yaml.kubernetes.security.secrets-in-config-file.secrets-in-config-file' at ../../Downloads/GCP-Remote-attestation-master/src/daemonset.yaml:4-4 ...
+2026-03-15 19:11:41 [DEBUG] ======================================================================
+2026-03-15 19:11:41 [DEBUG] LLM PROMPT (Foundation-Sec-8B via llama-cli)
+2026-03-15 19:11:41 [DEBUG] ======================================================================
+2026-03-15 19:11:41 [DEBUG] You are a cybersecurity expert performing a secure code review.
+Your task is to analyze a vulnerability detected by Semgrep and map it to the OWASP Top 10 (2021) framework.
+
+**Rule ID:** yaml.kubernetes.security.secrets-in-config-file.secrets-in-config-file
+**Semgrep Finding:** Secrets (LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUV2QUlCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQktZd2dnU2lBZ0VBQW9JQkFRRFVJdTI0Ri90SWJCMmEKQU0xNGJXaU5zSzIwSkd5N2dENW1aU0QxRXBNa1dnVDNackdGd3lLYys0ZFdNdFdjc1JDU21Jd2RheXlHWWxXTApwYTRnTUVXbjVDcEZSUUppODArd0x1bHN4RTE4S1dOVDM2RDlZUlZxS3JheTlBZVRmYk5QVG03c1pXaGNnUXdaCnZBUm1ZbStSc3czcFVKY1pzaGdIZjFHd0tlbitpck9rUldBaWFGcWEwNjFXMzgrSnJ3cVVDQ3RPaWhHL281dUkKaFNmcERGYTJvNlBmTStLbFNWSmFDM3dyR2xKU2oxRFBrd1o3alQxNmZmVFNmSHVPRld2N3h2TEJyTXVzVjRMegpiaDYxNGhQMWwxa3RKVHdZQ0lEQm1pU2FKK3BYR1Z2YTdrRFpvMWoxNFpYUlpONXI5cGoyU1BNOWRpcEhuUjRTCi9xajhheXoxQWdNQkFBRUNnZ0VBQU4vTnBINVVKQWN1czdiYlRKV0ExK0trUTBqZmVpeXNDbjU4c3JNd3BZdjAKYk1qcmVZa1FGYlJkL3FveUlnQkRJMDR3ZDZJOGhQenNsdFBTNGt3OTlwUS9ZMWt4TlJOYWRFMVdoaGhQVnhxOApPaVBZQ3BYeGxydUFmMm9pTk52N1Z2RS9Ea2VEQ2xjNEk2RllKYUdKWXdEcFVWay93aW52Sk9yRC9WVklPRlc3CjZPVzlsK0FXZ3FnYzloQXdLLzZsVkxaTjNOSEtYZUd3eUZDazdCdUJRM0tUVWJDdllmMjkxeEhyU2RPNll5L2sKSmdqVlYzM0pRTnZXK2NRKzB6MzliRGdwZ1lIMU9VdmdwUTRkZW5PY1lMaFNFOTlSU2FJcjJOQVlhOXg0Y0VNWQpOT3NDdVR4TG1ZWTJHOWdEbTVTWFRta0tKLy8wQzNqK3ZseFlkREdOMlFLQmdRRHFjeHJ6SmE5N3lTQXZISkg3CjdYTGhjbFl1S2VrVU9BZThUSU9UVVpRQjVvMjR2UFBmdmRvOXJEWkJUY3BFcHk0VmhhbjYzeDdTWHQyaG1mb2EKTUd5eHZiemxMSFFxRlhFcjVRN21XaW5BYThsT3praXdIRktOUUJBUjNBbExwZjZwNDY5cFdLMSs2T0xZVGllVwpvemtRNjFJaFhBNVpTYnZsMkVtWThMMWgzUUtCZ1FEbm9zUVE3M0E3RlFvd2FsaFluRlF1S2R4cDN3Mm94VDZDCnUvVUlpMS8zcHUxMSt0VEJhZlpQWTBKeVVWU1czM3dWMXYvOWV2b25NdXNnTERid1dJcks4b1o3aC94TlRpS0IKZFNBOEtsalZaWmtuQksxNThRSGdrRjFoaU9mQlRobmJHMHVBNzhNMyt3SEdFZTdrSzNIanF1Y2QvTW9kTk5GTAp6QW9taFNlaCtRS0JnQlZYc1NaZFVlSkU1dWNqQks4WWFKTFpZN3NFR2JHN2dBakdObHdjMndwcFFKR0dzZlMyClJiM0RoWlRnVGY5OThKWUkrdlpaaFdiRk9BdlVCbzZIeGYxUU5uZnVXZ3pTc3VDNkUyY280aEFnUDgwcXZqYzUKL05IYStSdUhHbG1Hbk80K1NlT2ZMUHdXbXoveHJXenJJdkRGVzA2cUlLeEVLQlMrWWNUSWRaVUpBb0dBYVlHVwo0c3ZkQjl4R2Z0VUJscUxtS1B6Q082cndrczM4OGhsZ3U5cVlCTHFROEtzbW0wNkRkWmVWblhKMElDQjlhWWs3Cm9wNlFNS2lkdGxMTlYxNU5JYkdrRmNKVDVuWlBlejM1Ujg1V0ZpVW54RUQ2TDAvYWRnbnJydEJvRjRGV2Y1bUkKSTV1U0JQNmN5VFpENU1QeEpTMGtCbUd0UWU1YjRyVjJiaU02Y1NrQ2dZQi9DcW92ZHFlRWpJZ2JtcDBVNTR0bgo5ek1VT0tJT1o5RU5t... (truncated 224 more characters)) should not be stored in infrastructure as code files. Use an alternative such as Bitnami Sealed Secrets or KSOPS to encrypt Kubernetes Secrets. 
+
+**Code Snippet:**
+
+       1 | apiVersion: v1
+       2 | data:
+       3 |   server_crt.pem: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVSRENDQXl5Z0F3SUJBZ0lCTHpBTkJna3Foa2lHOXcwQkFRc0ZBREJYTVFzd0NRWURWUVFHRXdKVlV6RVAKTUEwR0ExVUVDZ3dHUjI5dloyeGxNUk13RVFZRFZRUUxEQXBGYm5SbGNuQnlhWE5sTVNJd0lBWURWUVFEREJsRgpiblJsY25CeWFYTmxJRk4xWW05eVpHbHVZWFJsSUVOQk1CNFhEVEl5TVRBek1URTBOVE14TlZvWERUSTFNREl3Ck56RTBOVE14TlZvd1ZqRUxNQWtHQTFVRUJoTUNWVk14RHpBTkJnTlZCQW9NQmtkdmIyZHNaVEVUTUJFR0ExVUUKQ3d3S1JXNTBaWEp3Y21selpURWhNQjhHQTFVRUF3d1lZWFIwWlhOMGIzSXVaWE52WkdWdGIyRndjREl1WTI5dApNSUlCSWpBTkJna3Foa2lHOXcwQkFRRUZBQU9DQVE4QU1JSUJDZ0tDQVFFQTFDTHR1QmY3U0d3ZG1nRE5lRzFvCmpiQ3R0Q1JzdTRBK1ptVWc5UktUSkZvRTkyYXhoY01pblB1SFZqTFZuTEVRa3BpTUhXc3NobUpWaTZXdUlEQkYKcCtRcVJVVUNZdk5Qc0M3cGJNUk5mQ2xqVTkrZy9XRVZhaXEyc3ZRSGszMnpUMDV1N0dWb1hJRU1HYndFWm1KdgprYk1ONlZDWEdiSVlCMzlSc0NucC9vcXpwRVZnSW1oYW10T3RWdC9QaWE4S2xBZ3JUb29SdjZPYmlJVW42UXhXCnRxT2ozelBpcFVsU1dndDhLeHBTVW85UXo1TUdlNDA5ZW4zMDBueDdqaFZyKzhieXdhekxyRmVDODI0ZXRlSVQKOVpkWkxTVThHQWlBd1pva21pZnFWeGxiMnU1QTJhTlk5ZUdWMFdUZWEvYVk5a2p6UFhZcVI1MGVFdjZvL0dzcwo5UUlEQVFBQm80SUJHakNDQVJZd0RnWURWUjBQQVFIL0JBUURBZ2VBTUFrR0ExVWRFd1FDTUFBd0V3WURWUjBsCkJBd3dDZ1lJS3dZQkJRVUhBd0V3SFFZRFZSME9CQllFRkN5SHQxSzlsUmNMZFRmNDF2S1ZSTTU5RkFZdU1COEcKQTFVZEl3UVlNQmFBRkxlNnNBS2g1NzQweHNFRlhHWjQ1YnRUWGFGVU1FUUdDQ3NHQVFVRkJ3RUJCRGd3TmpBMApCZ2dyQmdFRkJRY3dBb1lvYUhSMGNEb3ZMM0JyYVM1bGMyOWtaVzF2WVhCd01pNWpiMjB2WTJFdmRHeHpMV05oCkxtTmxjakE1QmdOVkhSOEVNakF3TUM2Z0xLQXFoaWhvZEhSd09pOHZjR3RwTG1WemIyUmxiVzloY0hBeUxtTnYKYlM5allTOTBiSE10WTJFdVkzSnNNQ01HQTFVZEVRUWNNQnFDR0dGMGRHVnpkRzl5TG1WemIyUmxiVzloY0hBeQpMbU52YlRBTkJna3Foa2lHOXcwQkFRc0ZBQU9DQVFFQWxaamNlZVVlRmFqMGFiRHN3eHovU3MzaUVIaGR4RXZUCmxaMnJFempTRUdZVDNNRGRqL09qZHgxYW9WeG1mbmF2dEwrcVlTZDIxZnNzcnZNSjQyajF3S2h2bHFtR0N5TEYKOVRVN1NqSW9zWEJuSXhwS1dLU3lad0pDYmNYV1hTTTEvd05uSkZRNkxSYjlDVXJ0cy9VOWxPMEdhc3N0UkhwUgpqSHFBcTZvV3VhYmcwTjFOc3NTSmxPVVV3MGo5b3RzM1dqMXVOTU1uZ0pOcllEVy82V1haR2h0Y08vbU5obERECm40Z1gwNE9CWWJ0VEp3UXI0TmN5T1o5VjgyUU4walVQdDhZL1hpQmpGZjBhYkJUVlBRaCt5YU96T1plb2s1TTAKaWluV2dLNnNmU0R4Q0RmSEcyMkZHSExtcXlrb0l0TjYvRVB0QWRqTS9QakFoWVlQODdwak9RPT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQ==
+>>>    4 |   server_key.pem: LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUV2QUlCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQktZd2dnU2lBZ0VBQW9JQkFRRFVJdTI0Ri90SWJCMmEKQU0xNGJXaU5zSzIwSkd5N2dENW1aU0QxRXBNa1dnVDNackdGd3lLYys0ZFdNdFdjc1JDU21Jd2RheXlHWWxXTApwYTRnTUVXbjVDcEZSUUppODArd0x1bHN4RTE4S1dOVDM2RDlZUlZxS3JheTlBZVRmYk5QVG03c1pXaGNnUXdaCnZBUm1ZbStSc3czcFVKY1pzaGdIZjFHd0tlbitpck9rUldBaWFGcWEwNjFXMzgrSnJ3cVVDQ3RPaWhHL281dUkKaFNmcERGYTJvNlBmTStLbFNWSmFDM3dyR2xKU2oxRFBrd1o3alQxNmZmVFNmSHVPRld2N3h2TEJyTXVzVjRMegpiaDYxNGhQMWwxa3RKVHdZQ0lEQm1pU2FKK3BYR1Z2YTdrRFpvMWoxNFpYUlpONXI5cGoyU1BNOWRpcEhuUjRTCi9xajhheXoxQWdNQkFBRUNnZ0VBQU4vTnBINVVKQWN1czdiYlRKV0ExK0trUTBqZmVpeXNDbjU4c3JNd3BZdjAKYk1qcmVZa1FGYlJkL3FveUlnQkRJMDR3ZDZJOGhQenNsdFBTNGt3OTlwUS9ZMWt4TlJOYWRFMVdoaGhQVnhxOApPaVBZQ3BYeGxydUFmMm9pTk52N1Z2RS9Ea2VEQ2xjNEk2RllKYUdKWXdEcFVWay93aW52Sk9yRC9WVklPRlc3CjZPVzlsK0FXZ3FnYzloQXdLLzZsVkxaTjNOSEtYZUd3eUZDazdCdUJRM0tUVWJDdllmMjkxeEhyU2RPNll5L2sKSmdqVlYzM0pRTnZXK2NRKzB6MzliRGdwZ1lIMU9VdmdwUTRkZW5PY1lMaFNFOTlSU2FJcjJOQVlhOXg0Y0VNWQpOT3NDdVR4TG1ZWTJHOWdEbTVTWFRta0tKLy8wQzNqK3ZseFlkREdOMlFLQmdRRHFjeHJ6SmE5N3lTQXZISkg3CjdYTGhjbFl1S2VrVU9BZThUSU9UVVpRQjVvMjR2UFBmdmRvOXJEWkJUY3BFcHk0VmhhbjYzeDdTWHQyaG1mb2EKTUd5eHZiemxMSFFxRlhFcjVRN21XaW5BYThsT3praXdIRktOUUJBUjNBbExwZjZwNDY5cFdLMSs2T0xZVGllVwpvemtRNjFJaFhBNVpTYnZsMkVtWThMMWgzUUtCZ1FEbm9zUVE3M0E3RlFvd2FsaFluRlF1S2R4cDN3Mm94VDZDCnUvVUlpMS8zcHUxMSt0VEJhZlpQWTBKeVVWU1czM3dWMXYvOWV2b25NdXNnTERid1dJcks4b1o3aC94TlRpS0IKZFNBOEtsalZaWmtuQksxNThRSGdrRjFoaU9mQlRobmJHMHVBNzhNMyt3SEdFZTdrSzNIanF1Y2QvTW9kTk5GTAp6QW9taFNlaCtRS0JnQlZYc1NaZFVlSkU1dWNqQks4WWFKTFpZN3NFR2JHN2dBakdObHdjMndwcFFKR0dzZlMyClJiM0RoWlRnVGY5OThKWUkrdlpaaFdiRk9BdlVCbzZIeGYxUU5uZnVXZ3pTc3VDNkUyY280aEFnUDgwcXZqYzUKL05IYStSdUhHbG1Hbk80K1NlT2ZMUHdXbXoveHJXenJJdkRGVzA2cUlLeEVLQlMrWWNUSWRaVUpBb0dBYVlHVwo0c3ZkQjl4R2Z0VUJscUxtS1B6Q082cndrczM4OGhsZ3U5cVlCTHFROEtzbW0wNkRkWmVWblhKMElDQjlhWWs3Cm9wNlFNS2lkdGxMTlYxNU5JYkdrRmNKVDVuWlBlejM1Ujg1V0ZpVW54RUQ2TDAvYWRnbnJydEJvRjRGV2Y1bUkKSTV1U0JQNmN5VFpENU1QeEpTMGtCbUd0UWU1YjRyVjJiaU02Y1NrQ2dZQi9DcW92ZHFlRWpJZ2JtcDBVNTR0bgo5ek1VT0tJT1o5RU5teWJHYTNtbWVzYXZNVHlIS1ZOaDFsaVJ0NFBIMld5MnM5Q1gxT2lYSDl3NGRUS1ZSdVBoCmMxMzgvWFdoaEVESmtPYkxBL0tkdFhEVHFvOUsydWFOTi96Z3lBZnRaREs5NC9TQlVvdU90eTBLZXBkUXovNUkKeGN1NU0wTGZtNmZWc0dMRC9xRFZ3Zz09Ci0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS0=
+       5 |   root.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVEVENDQXZXZ0F3SUJBZ0lCQWpBTkJna3Foa2lHOXcwQkFRc0ZBREJRTVFzd0NRWURWUVFHRXdKVlV6RVAKTUEwR0ExVUVDZ3dHUjI5dloyeGxNUk13RVFZRFZRUUxEQXBGYm5SbGNuQnlhWE5sTVJzd0dRWURWUVFEREJKRgpiblJsY25CeWFYTmxJRkp2YjNRZ1EwRXdIaGNOTWpJd01UQTVNakl3TlRReldoY05Nekl3TVRBNU1qSXdOVFF6CldqQlhNUXN3Q1FZRFZRUUdFd0pWVXpFUE1BMEdBMVVFQ2d3R1IyOXZaMnhsTVJNd0VRWURWUVFMREFwRmJuUmwKY25CeWFYTmxNU0l3SUFZRFZRUUREQmxGYm5SbGNuQnlhWE5sSUZOMVltOXlaR2x1WVhSbElFTkJNSUlCSWpBTgpCZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUF6UUVTdVlySjVVdlZ6Tmw2SzlITDJ3SWpLcGkxClptVU5ObERvbndJRy84T3FwcHY4TGw1NXVLNUxzUW5QRVBqaXU2ZHhlTzdMSC9ZTVpESVpNWVNuNjI2UUtTNmMKQlE2N1dXSHAyeHZiNHpYSXBqbndMdDZGWCsrcHM4eVpOd1BuVDZ5a3pVVWRUZ3ZEUEh6aXNjcXY4aUJpTkp2MAp6c21UOXN5Wk5mWHlGTU1RVlB2SWxFN2hCNDV4akdHbko1ekhTV3JJWHowaWs0Smg3SUJSaE00TE03a2k3dVZQCnE2MTk1Y0I2M0w5SEh3UnpmcGFHYnVzcHRFeW1SYm5qVFlFcnUveElISDcxSlJsQkpLSTZzNWZ4MWlhQXpPSHcKNCtiUU9zdmZjM2xyNW5zeURPUHVrdm5lM3JMU1VQa2dTWUx0bEV2UGV3cDM1d0hpWGxEc0VnTXM3d0lEQVFBQgpvNEhxTUlIbk1BNEdBMVVkRHdFQi93UUVBd0lCQmpBU0JnTlZIUk1CQWY4RUNEQUdBUUgvQWdFQU1CMEdBMVVkCkRnUVdCQlMzdXJBQ29lZStOTWJCQlZ4bWVPVzdVMTJoVkRBZkJnTlZIU01FR0RBV2dCUjhIRnZvUHJNekNaYVMKTXRoL1JML01qSk9ja2pCRkJnZ3JCZ0VGQlFjQkFRUTVNRGN3TlFZSUt3WUJCUVVITUFLR0tXaDBkSEE2THk5dwphMmt1WlhOdlpHVnRiMkZ3Y0RJdVkyOXRMMk5oTDNKdmIzUXRZMkV1WTJWeU1Eb0dBMVVkSHdRek1ERXdMNkF0Cm9DdUdLV2gwZEhBNkx5OXdhMmt1WlhOdlpHVnRiMkZ3Y0RJdVkyOXRMMk5oTDNKdmIzUXRZMkV1WTNKc01BMEcKQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUURDcnJBd2RlUlFNb3Z1MDB3czhJM3JlVUlNRWR0c0Z3TFJTaHUwZ2dWaApHSE1IMXZHRHBkUkpvYVNwQ0dkQ2NQdjFJQTBCa0w2OTY5ZGYxR0RVeFFPV2JpTGFqeVE1UzZmVkZnWi95SWJuCjNTek13N0R1YmlnMmk5eEpvOWxhUHBqampNL2dGNmJCU3hkaG9MVUtMRmYwZTgyRkN1QVBYc2tlaVc3QmMxWEIKM3VpNHhnUE5WejNUSHU4TWE5ei9mVEpSb2hyQzh0MUMvcGFiN1RRcGNRUjZYa1JyWDVTYi9NTTZUbkZldzdzRAo1Y3VGVDdvL0R2YldUNDIvVVAybnVOaTU5MVRJR1lESkJDS0JxbmQwQUg2UnorVlR5ZVJVVnA0ajIxRXh0ekwwCkpLbU4xUytkbVA1VzZQMUVWK3p0RWxsS0VWM04vZTZyNjU1d2xERy8weTdHCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0=
+       6 | kind: Secret
+       7 | metadata:
+
+Provide your analysis in the following structured format:
+
+1. **OWASP Category**: Identify the specific OWASP Top 10 (2021) category (e.g., A01:2021 - Broken Access Control). If multiple categories apply, list all.
+2. **CWE Mapping**: Identify the relevant CWE (Common Weakness Enumeration) ID(s).
+3. **CVSS Estimate**: Provide an estimated CVSS v3.1 base score and vector string.
+4. **Severity**: Rate as one of: INFO, WARNING, ERROR.
+5. **Attack Vector**: Describe the specific attack scenario. Include example payloads where applicable.
+6. **Impact**: Describe the potential business and technical impact if exploited, including data confidentiality, integrity, and availability.
+7. **Remediation**: Provide a specific, secure code fix. Show the corrected code.
+8. **Defence in Depth**: Suggest additional security controls beyond the code fix (e.g., WAF rules, input validation layers, security headers).
+9. **References**: List relevant CWE IDs, OWASP links, and Cisco security advisories if applicable.
+2026-03-15 19:11:41 [DEBUG] ======================================================================
+2026-03-15 19:11:41 [DEBUG] Prompt written to temporary file: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt_aeo3hf_b.txt
+2026-03-15 19:11:41 [DEBUG] Executing: llama-cli --hf-repo fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF --hf-file foundation-sec-8b-instruct-q8_0.gguf -c 8192 -ngl -1 -t 6 -p <prompt>
+2026-03-15 19:13:00 [DEBUG] Temporary prompt file cleaned up: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt_aeo3hf_b.txt
+2026-03-15 19:13:00 [INFO] Finding 15/17 complete. Status: success
+2026-03-15 19:13:01 [INFO] Processing finding 16/17...
+2026-03-15 19:13:01 [INFO] Analyzing [WARNING] 'yaml.kubernetes.security.secrets-in-config-file.secrets-in-config-file' at ../../Downloads/GCP-Remote-attestation-master/src/daemonset.yaml:5-5 ...
+2026-03-15 19:13:01 [DEBUG] ======================================================================
+2026-03-15 19:13:01 [DEBUG] LLM PROMPT (Foundation-Sec-8B via llama-cli)
+2026-03-15 19:13:01 [DEBUG] ======================================================================
+2026-03-15 19:13:01 [DEBUG] You are a cybersecurity expert performing a secure code review.
+Your task is to analyze a vulnerability detected by Semgrep and map it to the OWASP Top 10 (2021) framework.
+
+**Rule ID:** yaml.kubernetes.security.secrets-in-config-file.secrets-in-config-file
+**Semgrep Finding:** Secrets (LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVEVENDQXZXZ0F3SUJBZ0lCQWpBTkJna3Foa2lHOXcwQkFRc0ZBREJRTVFzd0NRWURWUVFHRXdKVlV6RVAKTUEwR0ExVUVDZ3dHUjI5dloyeGxNUk13RVFZRFZRUUxEQXBGYm5SbGNuQnlhWE5sTVJzd0dRWURWUVFEREJKRgpiblJsY25CeWFYTmxJRkp2YjNRZ1EwRXdIaGNOTWpJd01UQTVNakl3TlRReldoY05Nekl3TVRBNU1qSXdOVFF6CldqQlhNUXN3Q1FZRFZRUUdFd0pWVXpFUE1BMEdBMVVFQ2d3R1IyOXZaMnhsTVJNd0VRWURWUVFMREFwRmJuUmwKY25CeWFYTmxNU0l3SUFZRFZRUUREQmxGYm5SbGNuQnlhWE5sSUZOMVltOXlaR2x1WVhSbElFTkJNSUlCSWpBTgpCZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUF6UUVTdVlySjVVdlZ6Tmw2SzlITDJ3SWpLcGkxClptVU5ObERvbndJRy84T3FwcHY4TGw1NXVLNUxzUW5QRVBqaXU2ZHhlTzdMSC9ZTVpESVpNWVNuNjI2UUtTNmMKQlE2N1dXSHAyeHZiNHpYSXBqbndMdDZGWCsrcHM4eVpOd1BuVDZ5a3pVVWRUZ3ZEUEh6aXNjcXY4aUJpTkp2MAp6c21UOXN5Wk5mWHlGTU1RVlB2SWxFN2hCNDV4akdHbko1ekhTV3JJWHowaWs0Smg3SUJSaE00TE03a2k3dVZQCnE2MTk1Y0I2M0w5SEh3UnpmcGFHYnVzcHRFeW1SYm5qVFlFcnUveElISDcxSlJsQkpLSTZzNWZ4MWlhQXpPSHcKNCtiUU9zdmZjM2xyNW5zeURPUHVrdm5lM3JMU1VQa2dTWUx0bEV2UGV3cDM1d0hpWGxEc0VnTXM3d0lEQVFBQgpvNEhxTUlIbk1BNEdBMVVkRHdFQi93UUVBd0lCQmpBU0JnTlZIUk1CQWY4RUNEQUdBUUgvQWdFQU1CMEdBMVVkCkRnUVdCQlMzdXJBQ29lZStOTWJCQlZ4bWVPVzdVMTJoVkRBZkJnTlZIU01FR0RBV2dCUjhIRnZvUHJNekNaYVMKTXRoL1JML01qSk9ja2pCRkJnZ3JCZ0VGQlFjQkFRUTVNRGN3TlFZSUt3WUJCUVVITUFLR0tXaDBkSEE2THk5dwphMmt1WlhOdlpHVnRiMkZ3Y0RJdVkyOXRMMk5oTDNKdmIzUXRZMkV1WTJWeU1Eb0dBMVVkSHdRek1ERXdMNkF0Cm9DdUdLV2gwZEhBNkx5OXdhMmt1WlhOdlpHVnRiMkZ3Y0RJdVkyOXRMMk5oTDNKdmIzUXRZMkV1WTNKc01BMEcKQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUURDcnJBd2RlUlFNb3Z1MDB3czhJM3JlVUlNRWR0c0Z3TFJTaHUwZ2dWaApHSE1IMXZHRHBkUkpvYVNwQ0dkQ2NQdjFJQTBCa0w2OTY5ZGYxR0RVeFFPV2JpTGFqeVE1UzZmVkZnWi95SWJuCjNTek13N0R1YmlnMmk5eEpvOWxhUHBqampNL2dGNmJCU3hkaG9MVUtMRmYwZTgyRkN1QVBYc2tlaVc3QmMxWEIKM3VpNHhnUE5WejNUSHU4TWE5ei9mVEpSb2hyQzh0MUMvcGFiN1RRcGNRUjZYa1JyWDVTYi9NTTZUbkZldzdzRAo1Y3VGVDdvL0R2YldUNDIvVVAybnVOaTU5MVRJR1lESkJDS0JxbmQwQUg2UnorVlR5ZVJVVnA0ajIxRXh0ekwwCkpLbU4xUytkbVA1VzZQMUVWK3p0RWxsS0VWM04vZTZyNjU1d2xERy8weTdHCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0=) should not be stored in infrastructure as code files. Use an alternative such as Bitnami Sealed Secrets or KSOPS to encrypt Kubernetes Secrets. 
+
+**Code Snippet:**
+
+       2 | data:
+       3 |   server_crt.pem: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVSRENDQXl5Z0F3SUJBZ0lCTHpBTkJna3Foa2lHOXcwQkFRc0ZBREJYTVFzd0NRWURWUVFHRXdKVlV6RVAKTUEwR0ExVUVDZ3dHUjI5dloyeGxNUk13RVFZRFZRUUxEQXBGYm5SbGNuQnlhWE5sTVNJd0lBWURWUVFEREJsRgpiblJsY25CeWFYTmxJRk4xWW05eVpHbHVZWFJsSUVOQk1CNFhEVEl5TVRBek1URTBOVE14TlZvWERUSTFNREl3Ck56RTBOVE14TlZvd1ZqRUxNQWtHQTFVRUJoTUNWVk14RHpBTkJnTlZCQW9NQmtkdmIyZHNaVEVUTUJFR0ExVUUKQ3d3S1JXNTBaWEp3Y21selpURWhNQjhHQTFVRUF3d1lZWFIwWlhOMGIzSXVaWE52WkdWdGIyRndjREl1WTI5dApNSUlCSWpBTkJna3Foa2lHOXcwQkFRRUZBQU9DQVE4QU1JSUJDZ0tDQVFFQTFDTHR1QmY3U0d3ZG1nRE5lRzFvCmpiQ3R0Q1JzdTRBK1ptVWc5UktUSkZvRTkyYXhoY01pblB1SFZqTFZuTEVRa3BpTUhXc3NobUpWaTZXdUlEQkYKcCtRcVJVVUNZdk5Qc0M3cGJNUk5mQ2xqVTkrZy9XRVZhaXEyc3ZRSGszMnpUMDV1N0dWb1hJRU1HYndFWm1KdgprYk1ONlZDWEdiSVlCMzlSc0NucC9vcXpwRVZnSW1oYW10T3RWdC9QaWE4S2xBZ3JUb29SdjZPYmlJVW42UXhXCnRxT2ozelBpcFVsU1dndDhLeHBTVW85UXo1TUdlNDA5ZW4zMDBueDdqaFZyKzhieXdhekxyRmVDODI0ZXRlSVQKOVpkWkxTVThHQWlBd1pva21pZnFWeGxiMnU1QTJhTlk5ZUdWMFdUZWEvYVk5a2p6UFhZcVI1MGVFdjZvL0dzcwo5UUlEQVFBQm80SUJHakNDQVJZd0RnWURWUjBQQVFIL0JBUURBZ2VBTUFrR0ExVWRFd1FDTUFBd0V3WURWUjBsCkJBd3dDZ1lJS3dZQkJRVUhBd0V3SFFZRFZSME9CQllFRkN5SHQxSzlsUmNMZFRmNDF2S1ZSTTU5RkFZdU1COEcKQTFVZEl3UVlNQmFBRkxlNnNBS2g1NzQweHNFRlhHWjQ1YnRUWGFGVU1FUUdDQ3NHQVFVRkJ3RUJCRGd3TmpBMApCZ2dyQmdFRkJRY3dBb1lvYUhSMGNEb3ZMM0JyYVM1bGMyOWtaVzF2WVhCd01pNWpiMjB2WTJFdmRHeHpMV05oCkxtTmxjakE1QmdOVkhSOEVNakF3TUM2Z0xLQXFoaWhvZEhSd09pOHZjR3RwTG1WemIyUmxiVzloY0hBeUxtTnYKYlM5allTOTBiSE10WTJFdVkzSnNNQ01HQTFVZEVRUWNNQnFDR0dGMGRHVnpkRzl5TG1WemIyUmxiVzloY0hBeQpMbU52YlRBTkJna3Foa2lHOXcwQkFRc0ZBQU9DQVFFQWxaamNlZVVlRmFqMGFiRHN3eHovU3MzaUVIaGR4RXZUCmxaMnJFempTRUdZVDNNRGRqL09qZHgxYW9WeG1mbmF2dEwrcVlTZDIxZnNzcnZNSjQyajF3S2h2bHFtR0N5TEYKOVRVN1NqSW9zWEJuSXhwS1dLU3lad0pDYmNYV1hTTTEvd05uSkZRNkxSYjlDVXJ0cy9VOWxPMEdhc3N0UkhwUgpqSHFBcTZvV3VhYmcwTjFOc3NTSmxPVVV3MGo5b3RzM1dqMXVOTU1uZ0pOcllEVy82V1haR2h0Y08vbU5obERECm40Z1gwNE9CWWJ0VEp3UXI0TmN5T1o5VjgyUU4walVQdDhZL1hpQmpGZjBhYkJUVlBRaCt5YU96T1plb2s1TTAKaWluV2dLNnNmU0R4Q0RmSEcyMkZHSExtcXlrb0l0TjYvRVB0QWRqTS9QakFoWVlQODdwak9RPT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQ==
+       4 |   server_key.pem: LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUV2QUlCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQktZd2dnU2lBZ0VBQW9JQkFRRFVJdTI0Ri90SWJCMmEKQU0xNGJXaU5zSzIwSkd5N2dENW1aU0QxRXBNa1dnVDNackdGd3lLYys0ZFdNdFdjc1JDU21Jd2RheXlHWWxXTApwYTRnTUVXbjVDcEZSUUppODArd0x1bHN4RTE4S1dOVDM2RDlZUlZxS3JheTlBZVRmYk5QVG03c1pXaGNnUXdaCnZBUm1ZbStSc3czcFVKY1pzaGdIZjFHd0tlbitpck9rUldBaWFGcWEwNjFXMzgrSnJ3cVVDQ3RPaWhHL281dUkKaFNmcERGYTJvNlBmTStLbFNWSmFDM3dyR2xKU2oxRFBrd1o3alQxNmZmVFNmSHVPRld2N3h2TEJyTXVzVjRMegpiaDYxNGhQMWwxa3RKVHdZQ0lEQm1pU2FKK3BYR1Z2YTdrRFpvMWoxNFpYUlpONXI5cGoyU1BNOWRpcEhuUjRTCi9xajhheXoxQWdNQkFBRUNnZ0VBQU4vTnBINVVKQWN1czdiYlRKV0ExK0trUTBqZmVpeXNDbjU4c3JNd3BZdjAKYk1qcmVZa1FGYlJkL3FveUlnQkRJMDR3ZDZJOGhQenNsdFBTNGt3OTlwUS9ZMWt4TlJOYWRFMVdoaGhQVnhxOApPaVBZQ3BYeGxydUFmMm9pTk52N1Z2RS9Ea2VEQ2xjNEk2RllKYUdKWXdEcFVWay93aW52Sk9yRC9WVklPRlc3CjZPVzlsK0FXZ3FnYzloQXdLLzZsVkxaTjNOSEtYZUd3eUZDazdCdUJRM0tUVWJDdllmMjkxeEhyU2RPNll5L2sKSmdqVlYzM0pRTnZXK2NRKzB6MzliRGdwZ1lIMU9VdmdwUTRkZW5PY1lMaFNFOTlSU2FJcjJOQVlhOXg0Y0VNWQpOT3NDdVR4TG1ZWTJHOWdEbTVTWFRta0tKLy8wQzNqK3ZseFlkREdOMlFLQmdRRHFjeHJ6SmE5N3lTQXZISkg3CjdYTGhjbFl1S2VrVU9BZThUSU9UVVpRQjVvMjR2UFBmdmRvOXJEWkJUY3BFcHk0VmhhbjYzeDdTWHQyaG1mb2EKTUd5eHZiemxMSFFxRlhFcjVRN21XaW5BYThsT3praXdIRktOUUJBUjNBbExwZjZwNDY5cFdLMSs2T0xZVGllVwpvemtRNjFJaFhBNVpTYnZsMkVtWThMMWgzUUtCZ1FEbm9zUVE3M0E3RlFvd2FsaFluRlF1S2R4cDN3Mm94VDZDCnUvVUlpMS8zcHUxMSt0VEJhZlpQWTBKeVVWU1czM3dWMXYvOWV2b25NdXNnTERid1dJcks4b1o3aC94TlRpS0IKZFNBOEtsalZaWmtuQksxNThRSGdrRjFoaU9mQlRobmJHMHVBNzhNMyt3SEdFZTdrSzNIanF1Y2QvTW9kTk5GTAp6QW9taFNlaCtRS0JnQlZYc1NaZFVlSkU1dWNqQks4WWFKTFpZN3NFR2JHN2dBakdObHdjMndwcFFKR0dzZlMyClJiM0RoWlRnVGY5OThKWUkrdlpaaFdiRk9BdlVCbzZIeGYxUU5uZnVXZ3pTc3VDNkUyY280aEFnUDgwcXZqYzUKL05IYStSdUhHbG1Hbk80K1NlT2ZMUHdXbXoveHJXenJJdkRGVzA2cUlLeEVLQlMrWWNUSWRaVUpBb0dBYVlHVwo0c3ZkQjl4R2Z0VUJscUxtS1B6Q082cndrczM4OGhsZ3U5cVlCTHFROEtzbW0wNkRkWmVWblhKMElDQjlhWWs3Cm9wNlFNS2lkdGxMTlYxNU5JYkdrRmNKVDVuWlBlejM1Ujg1V0ZpVW54RUQ2TDAvYWRnbnJydEJvRjRGV2Y1bUkKSTV1U0JQNmN5VFpENU1QeEpTMGtCbUd0UWU1YjRyVjJiaU02Y1NrQ2dZQi9DcW92ZHFlRWpJZ2JtcDBVNTR0bgo5ek1VT0tJT1o5RU5teWJHYTNtbWVzYXZNVHlIS1ZOaDFsaVJ0NFBIMld5MnM5Q1gxT2lYSDl3NGRUS1ZSdVBoCmMxMzgvWFdoaEVESmtPYkxBL0tkdFhEVHFvOUsydWFOTi96Z3lBZnRaREs5NC9TQlVvdU90eTBLZXBkUXovNUkKeGN1NU0wTGZtNmZWc0dMRC9xRFZ3Zz09Ci0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS0=
+>>>    5 |   root.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVEVENDQXZXZ0F3SUJBZ0lCQWpBTkJna3Foa2lHOXcwQkFRc0ZBREJRTVFzd0NRWURWUVFHRXdKVlV6RVAKTUEwR0ExVUVDZ3dHUjI5dloyeGxNUk13RVFZRFZRUUxEQXBGYm5SbGNuQnlhWE5sTVJzd0dRWURWUVFEREJKRgpiblJsY25CeWFYTmxJRkp2YjNRZ1EwRXdIaGNOTWpJd01UQTVNakl3TlRReldoY05Nekl3TVRBNU1qSXdOVFF6CldqQlhNUXN3Q1FZRFZRUUdFd0pWVXpFUE1BMEdBMVVFQ2d3R1IyOXZaMnhsTVJNd0VRWURWUVFMREFwRmJuUmwKY25CeWFYTmxNU0l3SUFZRFZRUUREQmxGYm5SbGNuQnlhWE5sSUZOMVltOXlaR2x1WVhSbElFTkJNSUlCSWpBTgpCZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUF6UUVTdVlySjVVdlZ6Tmw2SzlITDJ3SWpLcGkxClptVU5ObERvbndJRy84T3FwcHY4TGw1NXVLNUxzUW5QRVBqaXU2ZHhlTzdMSC9ZTVpESVpNWVNuNjI2UUtTNmMKQlE2N1dXSHAyeHZiNHpYSXBqbndMdDZGWCsrcHM4eVpOd1BuVDZ5a3pVVWRUZ3ZEUEh6aXNjcXY4aUJpTkp2MAp6c21UOXN5Wk5mWHlGTU1RVlB2SWxFN2hCNDV4akdHbko1ekhTV3JJWHowaWs0Smg3SUJSaE00TE03a2k3dVZQCnE2MTk1Y0I2M0w5SEh3UnpmcGFHYnVzcHRFeW1SYm5qVFlFcnUveElISDcxSlJsQkpLSTZzNWZ4MWlhQXpPSHcKNCtiUU9zdmZjM2xyNW5zeURPUHVrdm5lM3JMU1VQa2dTWUx0bEV2UGV3cDM1d0hpWGxEc0VnTXM3d0lEQVFBQgpvNEhxTUlIbk1BNEdBMVVkRHdFQi93UUVBd0lCQmpBU0JnTlZIUk1CQWY4RUNEQUdBUUgvQWdFQU1CMEdBMVVkCkRnUVdCQlMzdXJBQ29lZStOTWJCQlZ4bWVPVzdVMTJoVkRBZkJnTlZIU01FR0RBV2dCUjhIRnZvUHJNekNaYVMKTXRoL1JML01qSk9ja2pCRkJnZ3JCZ0VGQlFjQkFRUTVNRGN3TlFZSUt3WUJCUVVITUFLR0tXaDBkSEE2THk5dwphMmt1WlhOdlpHVnRiMkZ3Y0RJdVkyOXRMMk5oTDNKdmIzUXRZMkV1WTJWeU1Eb0dBMVVkSHdRek1ERXdMNkF0Cm9DdUdLV2gwZEhBNkx5OXdhMmt1WlhOdlpHVnRiMkZ3Y0RJdVkyOXRMMk5oTDNKdmIzUXRZMkV1WTNKc01BMEcKQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUURDcnJBd2RlUlFNb3Z1MDB3czhJM3JlVUlNRWR0c0Z3TFJTaHUwZ2dWaApHSE1IMXZHRHBkUkpvYVNwQ0dkQ2NQdjFJQTBCa0w2OTY5ZGYxR0RVeFFPV2JpTGFqeVE1UzZmVkZnWi95SWJuCjNTek13N0R1YmlnMmk5eEpvOWxhUHBqampNL2dGNmJCU3hkaG9MVUtMRmYwZTgyRkN1QVBYc2tlaVc3QmMxWEIKM3VpNHhnUE5WejNUSHU4TWE5ei9mVEpSb2hyQzh0MUMvcGFiN1RRcGNRUjZYa1JyWDVTYi9NTTZUbkZldzdzRAo1Y3VGVDdvL0R2YldUNDIvVVAybnVOaTU5MVRJR1lESkJDS0JxbmQwQUg2UnorVlR5ZVJVVnA0ajIxRXh0ekwwCkpLbU4xUytkbVA1VzZQMUVWK3p0RWxsS0VWM04vZTZyNjU1d2xERy8weTdHCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0=
+       6 | kind: Secret
+       7 | metadata:
+       8 |   name: tls-secrets
+
+Provide your analysis in the following structured format:
+
+1. **OWASP Category**: Identify the specific OWASP Top 10 (2021) category (e.g., A01:2021 - Broken Access Control). If multiple categories apply, list all.
+2. **CWE Mapping**: Identify the relevant CWE (Common Weakness Enumeration) ID(s).
+3. **CVSS Estimate**: Provide an estimated CVSS v3.1 base score and vector string.
+4. **Severity**: Rate as one of: INFO, WARNING, ERROR.
+5. **Attack Vector**: Describe the specific attack scenario. Include example payloads where applicable.
+6. **Impact**: Describe the potential business and technical impact if exploited, including data confidentiality, integrity, and availability.
+7. **Remediation**: Provide a specific, secure code fix. Show the corrected code.
+8. **Defence in Depth**: Suggest additional security controls beyond the code fix (e.g., WAF rules, input validation layers, security headers).
+9. **References**: List relevant CWE IDs, OWASP links, and Cisco security advisories if applicable.
+2026-03-15 19:13:01 [DEBUG] ======================================================================
+2026-03-15 19:13:01 [DEBUG] Prompt written to temporary file: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt_ifhro_zz.txt
+2026-03-15 19:13:01 [DEBUG] Executing: llama-cli --hf-repo fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF --hf-file foundation-sec-8b-instruct-q8_0.gguf -c 8192 -ngl -1 -t 6 -p <prompt>
+2026-03-15 19:14:28 [DEBUG] Temporary prompt file cleaned up: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt_ifhro_zz.txt
+2026-03-15 19:14:28 [INFO] Finding 16/17 complete. Status: success
+2026-03-15 19:14:28 [INFO] Processing finding 17/17...
+2026-03-15 19:14:28 [INFO] Analyzing [WARNING] 'yaml.kubernetes.security.allow-privilege-escalation.allow-privilege-escalation' at ../../Downloads/GCP-Remote-attestation-master/src/daemonset.yaml:69-69 ...
+2026-03-15 19:14:28 [DEBUG] ======================================================================
+2026-03-15 19:14:28 [DEBUG] LLM PROMPT (Foundation-Sec-8B via llama-cli)
+2026-03-15 19:14:28 [DEBUG] ======================================================================
+2026-03-15 19:14:28 [DEBUG] You are a cybersecurity expert performing a secure code review.
+Your task is to analyze a vulnerability detected by Semgrep and map it to the OWASP Top 10 (2021) framework.
+
+**Rule ID:** yaml.kubernetes.security.allow-privilege-escalation.allow-privilege-escalation
+**Semgrep Finding:** In Kubernetes, each pod runs in its own isolated environment with its own set of security policies. However, certain container images may contain `setuid` or `setgid` binaries that could allow an attacker to perform privilege escalation and gain access to sensitive resources. To mitigate this risk, it's recommended to add a `securityContext` to the container in the pod, with the parameter `allowPrivilegeEscalation` set to `false`. This will prevent the container from running any privileged processes and limit the impact of any potential attacks. By adding the `allowPrivilegeEscalation` parameter to your the `securityContext`, you can help to ensure that your containerized applications are more secure and less vulnerable to privilege escalation attacks.
+
+**Code Snippet:**
+
+      66 |       containers:
+      67 |         - name: server
+      68 |           image: index.docker.io/salrashid123/tpmds@sha256:ab96dceac23dcc4171dd9556e2c1d22033f21261b1d90ce643a129d46d1878a4
+>>>   69 |           securityContext:
+      70 |             privileged: true
+      71 |           ports:
+      72 |           - containerPort: 50051
+
+Provide your analysis in the following structured format:
+
+1. **OWASP Category**: Identify the specific OWASP Top 10 (2021) category (e.g., A01:2021 - Broken Access Control). If multiple categories apply, list all.
+2. **CWE Mapping**: Identify the relevant CWE (Common Weakness Enumeration) ID(s).
+3. **CVSS Estimate**: Provide an estimated CVSS v3.1 base score and vector string.
+4. **Severity**: Rate as one of: INFO, WARNING, ERROR.
+5. **Attack Vector**: Describe the specific attack scenario. Include example payloads where applicable.
+6. **Impact**: Describe the potential business and technical impact if exploited, including data confidentiality, integrity, and availability.
+7. **Remediation**: Provide a specific, secure code fix. Show the corrected code.
+8. **Defence in Depth**: Suggest additional security controls beyond the code fix (e.g., WAF rules, input validation layers, security headers).
+9. **References**: List relevant CWE IDs, OWASP links, and Cisco security advisories if applicable.
+2026-03-15 19:14:28 [DEBUG] ======================================================================
+2026-03-15 19:14:28 [DEBUG] Prompt written to temporary file: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt_k7tn3734.txt
+2026-03-15 19:14:28 [DEBUG] Executing: llama-cli --hf-repo fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF --hf-file foundation-sec-8b-instruct-q8_0.gguf -c 8192 -ngl -1 -t 6 -p <prompt>
+2026-03-15 19:15:12 [DEBUG] Temporary prompt file cleaned up: /var/folders/yr/9b64jh6s0c309lr8ckgk8zcm0000gn/T/owasp_prompt_k7tn3734.txt
+2026-03-15 19:15:12 [INFO] Finding 17/17 complete. Status: success
+2026-03-15 19:15:12 [INFO] Completed analysis of 17 finding(s).
+2026-03-15 19:15:12 [INFO] Markdown report written to 'security-reports/owasp_ai_report.md'.
+2026-03-15 19:15:12 [INFO] JSON report written to 'security-reports/owasp_ai_report.json'.
+2026-03-15 19:15:12 [INFO] JUnit report written to 'security-reports/owasp_junit_report.xml'.
+2026-03-15 19:15:12 [INFO] ==================================================
+2026-03-15 19:15:12 [INFO] QUALITY GATE EVALUATION
+2026-03-15 19:15:12 [INFO] ==================================================
+2026-03-15 19:15:12 [INFO] Threshold:        WARNING
+2026-03-15 19:15:12 [INFO] Threshold Level:  1
+2026-03-15 19:15:12 [INFO] Total Findings:   17
+2026-03-15 19:15:12 [INFO] Violations:       17
+2026-03-15 19:15:12 [INFO]   ❌ VIOLATION [ERROR] (level 2) dockerfile.security.missing-user-entrypoint.missing-user-entrypoint in ../../Downloads/GCP-Remote-attestation-master/Dockerfile:26-26
+2026-03-15 19:15:12 [INFO]   ❌ VIOLATION [WARNING] (level 1) go.lang.security.audit.crypto.math_random.math-random-used in ../../Downloads/GCP-Remote-attestation-master/grpc_attestor.go:17-17
+2026-03-15 19:15:12 [INFO]   ❌ VIOLATION [WARNING] (level 1) go.lang.security.audit.crypto.missing-ssl-minversion.missing-ssl-minversion in ../../Downloads/GCP-Remote-attestation-master/grpc_attestor.go:564-567
+2026-03-15 19:15:12 [INFO]   ❌ VIOLATION [WARNING] (level 1) yaml.kubernetes.security.secrets-in-config-file.secrets-in-config-file in ../../Downloads/GCP-Remote-attestation-master/src/app.yaml:3-3
+2026-03-15 19:15:12 [INFO]   ❌ VIOLATION [WARNING] (level 1) yaml.kubernetes.security.secrets-in-config-file.secrets-in-config-file in ../../Downloads/GCP-Remote-attestation-master/src/app.yaml:4-4
+2026-03-15 19:15:12 [INFO]   ❌ VIOLATION [WARNING] (level 1) yaml.kubernetes.security.secrets-in-config-file.secrets-in-config-file in ../../Downloads/GCP-Remote-attestation-master/src/app.yaml:5-5
+2026-03-15 19:15:12 [INFO]   ❌ VIOLATION [WARNING] (level 1) yaml.kubernetes.security.allow-privilege-escalation-no-securitycontext.allow-privilege-escalation-no-securitycontext in ../../Downloads/GCP-Remote-attestation-master/src/app.yaml:39-39
+2026-03-15 19:15:12 [INFO]   ❌ VIOLATION [WARNING] (level 1) go.lang.security.audit.crypto.missing-ssl-minversion.missing-ssl-minversion in ../../Downloads/GCP-Remote-attestation-master/src/client/RestWrapperVerifier/RestWrapperVerifier.go:20-23
+2026-03-15 19:15:12 [INFO]   ❌ VIOLATION [WARNING] (level 1) go.lang.security.audit.crypto.missing-ssl-minversion.missing-ssl-minversion in ../../Downloads/GCP-Remote-attestation-master/src/client/RestWrapperVerifier/RestWrapperVerifier.go:44-47
+2026-03-15 19:15:12 [INFO]   ❌ VIOLATION [WARNING] (level 1) go.lang.security.audit.crypto.missing-ssl-minversion.missing-ssl-minversion in ../../Downloads/GCP-Remote-attestation-master/src/client/RestWrapperVerifier/RestWrapperVerifier.go:68-71
+2026-03-15 19:15:12 [INFO]   ❌ VIOLATION [WARNING] (level 1) go.lang.security.audit.crypto.missing-ssl-minversion.missing-ssl-minversion in ../../Downloads/GCP-Remote-attestation-master/src/client/RestWrapperVerifier/RestWrapperVerifier.go:91-94
+2026-03-15 19:15:12 [INFO]   ❌ VIOLATION [WARNING] (level 1) go.lang.security.audit.crypto.math_random.math-random-used in ../../Downloads/GCP-Remote-attestation-master/src/client/grpc_verifier.go:31-31
+2026-03-15 19:15:12 [INFO]   ❌ VIOLATION [WARNING] (level 1) go.lang.security.audit.crypto.use_of_weak_crypto.use-of-sha1 in ../../Downloads/GCP-Remote-attestation-master/src/client/grpc_verifier.go:382-382
+2026-03-15 19:15:12 [INFO]   ❌ VIOLATION [WARNING] (level 1) yaml.kubernetes.security.secrets-in-config-file.secrets-in-config-file in ../../Downloads/GCP-Remote-attestation-master/src/daemonset.yaml:3-3
+2026-03-15 19:15:12 [INFO]   ❌ VIOLATION [WARNING] (level 1) yaml.kubernetes.security.secrets-in-config-file.secrets-in-config-file in ../../Downloads/GCP-Remote-attestation-master/src/daemonset.yaml:4-4
+2026-03-15 19:15:12 [INFO]   ❌ VIOLATION [WARNING] (level 1) yaml.kubernetes.security.secrets-in-config-file.secrets-in-config-file in ../../Downloads/GCP-Remote-attestation-master/src/daemonset.yaml:5-5
+2026-03-15 19:15:12 [INFO]   ❌ VIOLATION [WARNING] (level 1) yaml.kubernetes.security.allow-privilege-escalation.allow-privilege-escalation in ../../Downloads/GCP-Remote-attestation-master/src/daemonset.yaml:69-69
+2026-03-15 19:15:12 [WARNING] Quality gate FAILED: 17 finding(s) at or above 'WARNING' severity.
+2026-03-15 19:15:12 [INFO] ============================================================
+2026-03-15 19:15:12 [INFO]   Scan complete. Reports saved to 'security-reports'
+2026-03-15 19:15:12 [INFO]   Exit code: 1
+2026-03-15 19:15:12 [INFO] ============================================================
