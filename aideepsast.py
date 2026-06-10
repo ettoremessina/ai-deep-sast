@@ -1,4 +1,19 @@
 #!/usr/bin/env python3
+# Copyright 2026 Cisco Systems, Inc. and its affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# SPDX-License-Identifier: Apache-2.0
 
 import os
 import sys
@@ -54,14 +69,14 @@ def load_config(config_path):
 def parse_arguments():
     """Parse command-line arguments for CI/CD flexibility."""
     parser = argparse.ArgumentParser(
-        description="AI-Powered OWASP Top 10 Security Scanner",
+        description="AI Deep SAST — LLM-powered security scanner",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python3 aiowaspscan.py --target ./src
-  python3 aiowaspscan.py --target app.py --severity-threshold ERROR
-  python3 aiowaspscan.py --config config/scanner_config.yaml
-  python3 aiowaspscan.py --target ./src --skip-llm
+  python3 aideepsast.py --target ./src
+  python3 aideepsast.py --target app.py --severity-threshold ERROR
+  python3 aideepsast.py --config config/scanner_config.yaml
+  python3 aideepsast.py --target ./src --skip-llm
         """
     )
     parser.add_argument(
@@ -134,6 +149,10 @@ Examples:
         '--skip-llm', action='store_true', default=False,
         help='Skip LLM analysis (only run Semgrep scan)'
     )
+    parser.add_argument(
+        '--skip-llm-rules', type=str, default=None,
+        help='Comma-separated rule ID prefixes to skip LLM analysis for (default: config.)'
+    )
     return parser.parse_args()
 
 
@@ -152,37 +171,10 @@ def detect_cpu_threads():
         return 4
 
 
-def merge_configuration(args):
-    """
-    Merge configuration from YAML file, CLI arguments,
-    and environment variables. Priority: CLI > ENV > YAML > Defaults.
-    """
-    defaults = {
-        'target': '.',
-        'hf_repo': 'fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF',
-        'hf_file': 'foundation-sec-8b-instruct-q8_0.gguf',
-        'ctx_size': 4096,
-        'n_gpu_layers': -1,
-        'threads': detect_cpu_threads(),
-        'max_tokens': 2048,
-        'temperature': 0.1,
-        'output_dir': 'security-reports',
-        'severity_threshold': 'WARNING',
-        'llm_timeout': 300,
-        'semgrep_config': 'p/owasp-top-ten',
-        'semgrep_timeout': 300,
-        'log_level': 'INFO',
-        'log_file': None,
-        'skip_llm': False
-    }
-
-    # Load YAML config if provided
-    yaml_config = {}
-    if args.config:
-        yaml_config = load_config(args.config)
-
-    # Environment variable overrides
+def _parse_env_config():
+    """Parse scanner configuration from environment variables."""
     env_config = {}
+
     env_str_mappings = {
         'target': 'SCANNER_TARGET',
         'hf_repo': 'SCANNER_HF_REPO',
@@ -225,7 +217,11 @@ def merge_configuration(args):
     if skip_llm_env is not None:
         env_config['skip_llm'] = skip_llm_env.lower() in ('true', '1', 'yes')
 
-    # CLI argument overrides
+    return env_config
+
+
+def _parse_cli_config(args):
+    """Parse scanner configuration from CLI arguments."""
     cli_config = {}
     cli_mappings = {
         'target': args.target,
@@ -250,6 +246,44 @@ def merge_configuration(args):
 
     if args.skip_llm:
         cli_config['skip_llm'] = True
+    if args.skip_llm_rules is not None:
+        cli_config['skip_llm_rules'] = args.skip_llm_rules
+
+    return cli_config
+
+
+def merge_configuration(args):
+    """
+    Merge configuration from YAML file, CLI arguments,
+    and environment variables. Priority: CLI > ENV > YAML > Defaults.
+    """
+    defaults = {
+        'target': '.',
+        'hf_repo': 'fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF',
+        'hf_file': 'foundation-sec-8b-instruct-q8_0.gguf',
+        'ctx_size': 4096,
+        'n_gpu_layers': -1,
+        'threads': detect_cpu_threads(),
+        'max_tokens': 2048,
+        'temperature': 0.1,
+        'output_dir': 'security-reports',
+        'severity_threshold': 'WARNING',
+        'llm_timeout': 300,
+        'semgrep_config': 'p/default,p/secrets,config/custom-secrets.yaml,config/custom-zipslip.yaml',
+        'semgrep_timeout': 300,
+        'log_level': 'INFO',
+        'log_file': None,
+        'skip_llm': False,
+        'skip_llm_rules': 'config.'
+    }
+
+    # Load YAML config if provided
+    yaml_config = {}
+    if args.config:
+        yaml_config = load_config(args.config)
+
+    env_config = _parse_env_config()
+    cli_config = _parse_cli_config(args)
 
     # Merge: CLI > ENV > YAML > Defaults
     final_config = {}
@@ -311,21 +345,21 @@ def validate_environment(target, skip_llm, config, logger):
         logger.error("Semgrep version check timed out.")
         sys.exit(2)
 
-    # Check llama-cli is installed (only if LLM analysis is enabled)
+    # Check llama-completion is installed (only if LLM analysis is enabled)
     if not skip_llm:
         try:
             result = subprocess.run(
-                ["llama-cli", "--version"],
+                ["llama-completion", "--version"],
                 capture_output=True, text=True, timeout=15
             )
-            logger.info(f"llama-cli version: {result.stdout.strip()}")
+            logger.info(f"llama-completion version: {result.stdout.strip()}")
         except FileNotFoundError:
-            logger.error("llama-cli is not installed or not in PATH.")
+            logger.error("llama-completion is not installed or not in PATH.")
             logger.error("Install llama.cpp: brew install llama.cpp")
             logger.error("Or use --skip-llm to run without LLM analysis.")
             sys.exit(2)
         except subprocess.TimeoutExpired:
-            logger.error("llama-cli version check timed out.")
+            logger.error("llama-completion version check timed out.")
             sys.exit(2)
 
         # Memory check
@@ -341,7 +375,7 @@ def validate_environment(target, skip_llm, config, logger):
         logger.info(f"GPU layers: {config['n_gpu_layers']}")
         logger.info(f"CPU threads: {config['threads']}")
     else:
-        logger.info("LLM analysis is disabled. Skipping llama-cli check.")
+        logger.info("LLM analysis is disabled. Skipping llama-completion check.")
 
     logger.info("Environment validation passed.")
 
@@ -351,15 +385,19 @@ def run_semgrep_scan(target, config, output_dir, timeout, logger):
     semgrep_output = os.path.join(output_dir, 'semgrep_report.json')
     logger.info(f"Running Semgrep scan on '{target}' with config '{config}'...")
 
+    # Support multiple comma-separated Semgrep configs (e.g. "p/owasp-top-ten,p/secrets")
+    config_args = []
+    for c in config.split(','):
+        config_args.extend(["--config", c.strip()])
+
     try:
+        cmd = ["semgrep"] + config_args + [
+            "--json",
+            f"--output={semgrep_output}",
+            target
+        ]
         result = subprocess.run(
-            [
-                "semgrep",
-                f"--config={config}",
-                "--json",
-                f"--output={semgrep_output}",
-                target
-            ],
+            cmd,
             capture_output=True,
             text=True,
             timeout=timeout
@@ -414,7 +452,7 @@ def run_semgrep_scan(target, config, output_dir, timeout, logger):
 def build_prompt(code_snippet, semgrep_finding, rule_id):
     """
     Build the LLM prompt for a given finding.
-    Optimised for Cisco Foundation-Sec-8B-Instruct model.
+    Optimised for Foundation-Sec-8B-Instruct model.
     """
     return f"""You are a cybersecurity expert performing a secure code review.
 Your task is to analyze a vulnerability detected by Semgrep and map it to the OWASP Top 10 (2021) framework.
@@ -436,25 +474,25 @@ Provide your analysis in the following structured format:
 6. **Impact**: Describe the potential business and technical impact if exploited, including data confidentiality, integrity, and availability.
 7. **Remediation**: Provide a specific, secure code fix. Show the corrected code.
 8. **Defence in Depth**: Suggest additional security controls beyond the code fix (e.g., WAF rules, input validation layers, security headers).
-9. **References**: List relevant CWE IDs, OWASP links, and Cisco security advisories if applicable."""
+9. **References**: List relevant CWE IDs and OWASP links."""
 
 
 def ask_llm(code_snippet, semgrep_finding, rule_id, config, logger):
     """
-    Query Cisco Foundation-Sec-8B via llama-cli with GGUF model.
+    Query Foundation-Sec-8B via llama-completion with GGUF model.
     Uses a temporary file for the prompt to avoid
     exposing code in shell history or process logs.
 
     Command:
-    llama-cli --hf-repo fdtn-ai/Foundation-Sec-8B-Q8_0-GGUF \
-              --hf-file foundation-sec-8b-q8_0.gguf \
-              -p "<prompt>"
+    llama-completion --hf-repo fdtn-ai/Foundation-Sec-8B-Q8_0-GGUF \
+                     --hf-file foundation-sec-8b-q8_0.gguf \
+                     -p "<prompt>"
     """
     prompt = build_prompt(code_snippet, semgrep_finding, rule_id)
     tmp_path = None
 
     logger.debug("=" * 70)
-    logger.debug("LLM PROMPT (Foundation-Sec-8B via llama-cli)")
+    logger.debug("LLM PROMPT (Foundation-Sec-8B via llama-completion)")
     logger.debug("=" * 70)
     logger.debug(prompt)
     logger.debug("=" * 70)
@@ -473,9 +511,12 @@ def ask_llm(code_snippet, semgrep_finding, rule_id, config, logger):
         with open(tmp_path, 'r') as f:
             prompt_content = f.read()
 
-        # Build llama-cli command
+        # Build llama-completion command (non-interactive, clean stdout)
+        # Note: llama-cli auto-enables conversation mode when a chat
+        # template is detected, which sends output to the interactive UI
+        # instead of stdout. llama-completion avoids this entirely.
         cmd = [
-            "llama-cli",
+            "llama-completion",
             "--hf-repo", config['hf_repo'],
             "--hf-file", config['hf_file'],
             "-c", str(config['ctx_size']),
@@ -484,11 +525,12 @@ def ask_llm(code_snippet, semgrep_finding, rule_id, config, logger):
             "--temp", str(config['temperature']),
             "-n", str(config['max_tokens']),
             "--no-display-prompt",
+            "--single-turn",
             "-p", prompt_content
         ]
 
         logger.debug(
-            f"Executing: llama-cli --hf-repo {config['hf_repo']} "
+            f"Executing: llama-completion --hf-repo {config['hf_repo']} "
             f"--hf-file {config['hf_file']} "
             f"-c {config['ctx_size']} -ngl {config['n_gpu_layers']} "
             f"-t {config['threads']} -p <prompt>"
@@ -503,7 +545,7 @@ def ask_llm(code_snippet, semgrep_finding, rule_id, config, logger):
 
         if result.returncode != 0:
             logger.warning(
-                f"llama-cli returned exit code {result.returncode}. "
+                f"llama-completion returned exit code {result.returncode}. "
                 f"Stderr: {result.stderr.strip()[:500]}"
             )
             return {
@@ -513,12 +555,27 @@ def ask_llm(code_snippet, semgrep_finding, rule_id, config, logger):
             }
 
         output = result.stdout.strip()
+        # llama-completion appends "[end of text]" marker — strip it
+        if output.endswith("[end of text]"):
+            output = output[:-len("[end of text]")].strip()
         if not output:
-            logger.warning("llama-cli returned empty output.")
+            logger.warning("llama-completion returned empty output.")
+            stderr_content = result.stderr.strip()
+            if stderr_content:
+                logger.warning(f"Stderr: {stderr_content[:500]}")
+            # Some llama-completion versions write output to stderr
+            # Try stderr as fallback if it contains substantial content
+            if stderr_content and len(stderr_content) > 200:
+                logger.info("Using stderr as fallback output.")
+                return {
+                    "status": "success",
+                    "message": stderr_content,
+                    "raw_output": stderr_content
+                }
             return {
                 "status": "empty",
                 "message": "LLM returned empty response. Manual review required.",
-                "raw_output": ""
+                "raw_output": stderr_content[:500] if stderr_content else ""
             }
 
         return {
@@ -529,7 +586,7 @@ def ask_llm(code_snippet, semgrep_finding, rule_id, config, logger):
 
     except subprocess.TimeoutExpired:
         logger.warning(
-            f"llama-cli timed out after {config['llm_timeout']} seconds."
+            f"llama-completion timed out after {config['llm_timeout']} seconds."
         )
         return {
             "status": "timeout",
@@ -537,14 +594,14 @@ def ask_llm(code_snippet, semgrep_finding, rule_id, config, logger):
             "raw_output": ""
         }
     except FileNotFoundError:
-        logger.error("llama-cli executable not found.")
+        logger.error("llama-completion executable not found.")
         return {
             "status": "error",
-            "message": "llama-cli not found. Manual review required.",
+            "message": "llama-completion not found. Manual review required.",
             "raw_output": ""
         }
     except Exception as e:
-        logger.warning(f"llama-cli call failed: {e}")
+        logger.warning(f"llama-completion call failed: {e}")
         return {
             "status": "error",
             "message": f"LLM analysis error: {str(e)}. Manual review required.",
@@ -618,8 +675,8 @@ def process_single_finding(finding, config, logger):
         "code_snippet": code_snippet,
         "ai_analysis": ai_result,
         "metadata": {
-            "cwe": metadata.get('cwe', []),
-            "owasp": metadata.get('owasp', []),
+            "cwe": _ensure_list(metadata.get('cwe', [])),
+            "owasp": _ensure_list(metadata.get('owasp', [])),
             "confidence": metadata.get('confidence', 'UNKNOWN'),
             "references": metadata.get('references', [])
         },
@@ -627,83 +684,79 @@ def process_single_finding(finding, config, logger):
     }
 
 
-def process_findings(data, config, skip_llm, logger):
-    """Analyze each Semgrep finding using llama-cli."""
-    findings = data.get('results', [])
-    if not findings:
-        logger.info("No findings to process.")
-        return []
+def _ensure_list(value):
+    """Ensure a metadata value is a list (some Semgrep rules return a string)."""
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, list):
+        return value
+    return []
 
-    report = []
 
-    if skip_llm:
-        logger.info(f"Processing {len(findings)} finding(s) without LLM analysis...")
-        for finding in findings:
-            file_path = finding['path']
-            start = finding['start']['line']
-            end = finding['end']['line']
-            message = finding['extra']['message']
-            rule_id = finding.get('check_id', 'unknown')
-            severity = finding['extra'].get('severity', 'WARNING').upper()
-            metadata = finding['extra'].get('metadata', {})
+def _build_static_analysis(finding, metadata):
+    """Build a static analysis result from Semgrep rule metadata (no LLM)."""
+    cwe_list = _ensure_list(metadata.get('cwe', []))
+    owasp_list = _ensure_list(metadata.get('owasp', []))
+    confidence = metadata.get('confidence', 'UNKNOWN')
+    impact = metadata.get('impact', 'UNKNOWN')
+    message = finding['extra']['message']
 
-            code_snippet = extract_code_snippet(
-                file_path, start, end, context_lines=3, logger=logger
-            )
+    lines = []
+    lines.append("**Static Analysis (LLM skipped — deterministic rule)**\n")
+    if owasp_list:
+        lines.append(f"1. **OWASP Category**: {', '.join(owasp_list)}")
+    if cwe_list:
+        lines.append(f"2. **CWE Mapping**: {', '.join(cwe_list)}")
+    lines.append(f"3. **Confidence**: {confidence}")
+    lines.append(f"4. **Impact**: {impact}")
+    lines.append(f"5. **Semgrep Message**: {message}")
+    lines.append(f"6. **Remediation**: {message}")
 
-            report.append({
-                "file": file_path,
-                "start_line": start,
-                "end_line": end,
-                "lines": f"{start}-{end}",
-                "rule_id": rule_id,
-                "severity": severity,
-                "semgrep_message": message,
-                "code_snippet": code_snippet,
-                "ai_analysis": {
-                    "status": "skipped",
-                    "message": "LLM analysis was skipped.",
-                    "raw_output": ""
-                },
-                "metadata": {
-                    "cwe": metadata.get('cwe', []),
-                    "owasp": metadata.get('owasp', []),
-                    "confidence": metadata.get('confidence', 'UNKNOWN'),
-                    "references": metadata.get('references', [])
-                },
-                "timestamp": utc_now_iso()
-            })
-        logger.info(f"Processed {len(report)} finding(s) without LLM.")
-        return report
+    return {
+        "status": "skipped_rule",
+        "message": '\n'.join(lines),
+        "raw_output": ""
+    }
 
-    # Sequential processing — each call invokes llama-cli
-    # Note: llama-cli loads the model per invocation. On Mac with Metal,
+
+def _should_skip_llm_for_rule(rule_id, skip_llm_rules_str):
+    """Check if a rule ID matches any of the skip prefixes."""
+    if not skip_llm_rules_str:
+        return False
+    prefixes = [p.strip() for p in skip_llm_rules_str.split(',') if p.strip()]
+    return any(rule_id.startswith(prefix) for prefix in prefixes)
+
+
+def _run_llm_analysis(llm_findings, config, threshold, logger):
+    """Run LLM analysis on findings and return report entries."""
+    # Note: llama-completion loads the model per invocation. On Mac with Metal,
     # the GGUF model loads quickly (~2-5 seconds) and infers efficiently.
     logger.info(
-        f"Processing {len(findings)} finding(s) with "
-        f"Foundation-Sec-8B via llama-cli..."
+        f"Processing {len(llm_findings)} finding(s) at {threshold}+ severity with "
+        f"Foundation-Sec-8B via llama-completion..."
     )
     logger.info(
         f"Model: {config['hf_repo']} / {config['hf_file']}"
     )
     logger.info(
-        f"Estimated time: ~{len(findings) * 30}-{len(findings) * 120} seconds "
+        f"Estimated time: ~{len(llm_findings) * 30}-{len(llm_findings) * 120} seconds "
         f"(depends on hardware)"
     )
 
-    for i, finding in enumerate(findings, 1):
-        logger.info(f"Processing finding {i}/{len(findings)}...")
+    results = []
+    for i, finding in enumerate(llm_findings, 1):
+        logger.info(f"Processing finding {i}/{len(llm_findings)}...")
         try:
             result = process_single_finding(finding, config, logger)
-            report.append(result)
+            results.append(result)
             logger.info(
-                f"Finding {i}/{len(findings)} complete. "
+                f"Finding {i}/{len(llm_findings)} complete. "
                 f"Status: {result['ai_analysis']['status']}"
             )
         except Exception as e:
             rule_id = finding.get('check_id', 'unknown')
             logger.error(f"Error processing finding '{rule_id}': {e}")
-            report.append({
+            results.append({
                 "file": finding.get('path', 'unknown'),
                 "start_line": finding.get('start', {}).get('line', 0),
                 "end_line": finding.get('end', {}).get('line', 0),
@@ -720,6 +773,104 @@ def process_findings(data, config, skip_llm, logger):
                 "metadata": {},
                 "timestamp": utc_now_iso()
             })
+    return results
+
+
+def _build_finding_entry(finding, ai_analysis, logger):
+    """Build a standardised report entry from a Semgrep finding."""
+    file_path = finding['path']
+    start = finding['start']['line']
+    end = finding['end']['line']
+    metadata = finding['extra'].get('metadata', {})
+    code_snippet = extract_code_snippet(
+        file_path, start, end, context_lines=3, logger=logger
+    )
+    return {
+        "file": file_path,
+        "start_line": start,
+        "end_line": end,
+        "lines": f"{start}-{end}",
+        "rule_id": finding.get('check_id', 'unknown'),
+        "severity": finding['extra'].get('severity', 'WARNING').upper(),
+        "semgrep_message": finding['extra']['message'],
+        "code_snippet": code_snippet,
+        "ai_analysis": ai_analysis,
+        "metadata": {
+            "cwe": _ensure_list(metadata.get('cwe', [])),
+            "owasp": _ensure_list(metadata.get('owasp', [])),
+            "confidence": metadata.get('confidence', 'UNKNOWN'),
+            "references": metadata.get('references', [])
+        },
+        "timestamp": utc_now_iso()
+    }
+
+
+def process_findings(data, config, skip_llm, logger):
+    """Analyze each Semgrep finding using llama-completion."""
+    findings = data.get('results', [])
+    if not findings:
+        logger.info("No findings to process.")
+        return []
+
+    report = []
+    skip_llm_rules = config.get('skip_llm_rules', '')
+
+    if skip_llm:
+        logger.info(f"Processing {len(findings)} finding(s) without LLM analysis...")
+        for finding in findings:
+            ai = {"status": "skipped", "message": "LLM analysis was skipped.", "raw_output": ""}
+            report.append(_build_finding_entry(finding, ai, logger))
+        logger.info(f"Processed {len(report)} finding(s) without LLM.")
+        return report
+
+    # Filter findings by severity threshold for LLM analysis
+    severity_levels = {'INFO': 0, 'WARNING': 1, 'ERROR': 2}
+    threshold = config.get('severity_threshold', 'WARNING').upper()
+    threshold_level = severity_levels.get(threshold, 1)
+
+    llm_findings = []
+    skipped_findings = []
+    rule_skipped_findings = []
+
+    for finding in findings:
+        rule_id = finding.get('check_id', 'unknown')
+        sev = finding['extra'].get('severity', 'WARNING').upper()
+
+        if _should_skip_llm_for_rule(rule_id, skip_llm_rules):
+            rule_skipped_findings.append(finding)
+        elif severity_levels.get(sev, 1) >= threshold_level:
+            llm_findings.append(finding)
+        else:
+            skipped_findings.append(finding)
+
+    # Add rule-skipped findings with static analysis from Semgrep metadata
+    for finding in rule_skipped_findings:
+        metadata = finding['extra'].get('metadata', {})
+        ai = _build_static_analysis(finding, metadata)
+        report.append(_build_finding_entry(finding, ai, logger))
+
+    if rule_skipped_findings:
+        logger.info(
+            f"Skipped LLM for {len(rule_skipped_findings)} finding(s) matching "
+            f"rule prefixes: {skip_llm_rules} (using Semgrep metadata instead)."
+        )
+
+    # Add severity-skipped findings to report without LLM analysis
+    for finding in skipped_findings:
+        ai = {
+            "status": "skipped",
+            "message": f"Below severity threshold ({threshold}). Manual review if needed.",
+            "raw_output": ""
+        }
+        report.append(_build_finding_entry(finding, ai, logger))
+
+    if skipped_findings:
+        logger.info(
+            f"Skipped {len(skipped_findings)} finding(s) below {threshold} severity."
+        )
+
+    # Sequential processing — each call invokes llama-completion
+    report.extend(_run_llm_analysis(llm_findings, config, threshold, logger))
 
     # Sort by severity then by file
     severity_order = {'ERROR': 0, 'WARNING': 1, 'INFO': 2}
@@ -742,13 +893,63 @@ def generate_summary(report):
     return summary
 
 
+def _write_finding_md(f, i, entry):
+    """Write a single finding's Markdown section to the file handle."""
+    severity_icon = {'ERROR': '🔴', 'WARNING': '🟡', 'INFO': '🔵'}
+    icon = severity_icon.get(entry['severity'], '⚪')
+
+    f.write(f"### Finding {i} {icon} {entry['rule_id']}\n\n")
+    f.write("| Property | Value |\n")
+    f.write("|----------|-------|\n")
+    f.write(f"| **File** | `{entry['file']}` |\n")
+    f.write(f"| **Lines** | {entry['lines']} |\n")
+    f.write(f"| **Severity** | {entry['severity']} |\n")
+    f.write(f"| **Confidence** | {entry.get('metadata', {}).get('confidence', 'N/A')} |\n")
+
+    cwe_list = _ensure_list(entry.get('metadata', {}).get('cwe', []))
+    owasp_list = _ensure_list(entry.get('metadata', {}).get('owasp', []))
+    if cwe_list:
+        f.write(f"| **CWE** | {', '.join(cwe_list)} |\n")
+    if owasp_list:
+        f.write(f"| **OWASP** | {', '.join(owasp_list)} |\n")
+
+    f.write(f"| **Timestamp** | {entry['timestamp']} |\n\n")
+
+    f.write(f"#### Semgrep Finding\n\n{entry['semgrep_message']}\n\n")
+    f.write(f"#### Code Snippet\n\n```\n{entry['code_snippet']}\n```\n\n")
+
+    ai = entry.get('ai_analysis', {})
+    if isinstance(ai, dict):
+        status = ai.get('status', 'unknown')
+        if status == 'success':
+            f.write(f"#### 🤖 AI Analysis (Foundation-Sec-8B)\n\n{ai['message']}\n\n")
+        elif status == 'skipped':
+            f.write("#### 🤖 AI Analysis\n\n*LLM analysis was skipped.*\n\n")
+        else:
+            f.write(
+                f"#### 🤖 AI Analysis\n\n"
+                f"⚠️ *{ai.get('message', 'Analysis unavailable.')}*\n\n"
+            )
+    else:
+        f.write(f"#### 🤖 AI Analysis\n\n{ai}\n\n")
+
+    refs = entry.get('metadata', {}).get('references', [])
+    if refs:
+        f.write("#### References\n\n")
+        for ref in refs:
+            f.write(f"- {ref}\n")
+        f.write("\n")
+
+    f.write("---\n\n")
+
+
 def generate_markdown_report(report, output_dir, config, logger):
     """Generate a detailed Markdown report."""
     md_path = os.path.join(output_dir, 'owasp_ai_report.md')
     summary = generate_summary(report)
 
     with open(md_path, 'w') as f:
-        f.write("# 🛡️ AI-Powered OWASP Top 10 Security Report\n\n")
+        f.write("# AI Deep SAST — Security Report\n\n")
         f.write(f"**Generated:** {utc_now_iso()} UTC\n\n")
         f.write(f"**Target:** `{config.get('target', 'N/A')}`\n\n")
         f.write(f"**Semgrep Config:** `{config.get('semgrep_config', 'N/A')}`\n\n")
@@ -765,7 +966,9 @@ def generate_markdown_report(report, output_dir, config, logger):
         f.write("---\n\n")
 
         if not report:
-            f.write("✅ **No security findings detected.**\n")
+            f.write("✅ **No security findings detected.**\n\n")
+            f.write("---\n\n")
+            f.write("*Built with Llama*\n")
             logger.info(f"Markdown report written to '{md_path}'.")
             return md_path
 
@@ -782,52 +985,10 @@ def generate_markdown_report(report, output_dir, config, logger):
 
         f.write("## Detailed Findings\n\n")
         for i, entry in enumerate(report, 1):
-            severity_icon = {'ERROR': '🔴', 'WARNING': '🟡', 'INFO': '🔵'}
-            icon = severity_icon.get(entry['severity'], '⚪')
+            _write_finding_md(f, i, entry)
 
-            f.write(f"### Finding {i} {icon} {entry['rule_id']}\n\n")
-            f.write("| Property | Value |\n")
-            f.write("|----------|-------|\n")
-            f.write(f"| **File** | `{entry['file']}` |\n")
-            f.write(f"| **Lines** | {entry['lines']} |\n")
-            f.write(f"| **Severity** | {entry['severity']} |\n")
-            f.write(f"| **Confidence** | {entry.get('metadata', {}).get('confidence', 'N/A')} |\n")
-
-            cwe_list = entry.get('metadata', {}).get('cwe', [])
-            owasp_list = entry.get('metadata', {}).get('owasp', [])
-            if cwe_list:
-                f.write(f"| **CWE** | {', '.join(cwe_list)} |\n")
-            if owasp_list:
-                f.write(f"| **OWASP** | {', '.join(owasp_list)} |\n")
-
-            f.write(f"| **Timestamp** | {entry['timestamp']} |\n\n")
-
-            f.write(f"#### Semgrep Finding\n\n{entry['semgrep_message']}\n\n")
-            f.write(f"#### Code Snippet\n\n```\n{entry['code_snippet']}\n```\n\n")
-
-            ai = entry.get('ai_analysis', {})
-            if isinstance(ai, dict):
-                status = ai.get('status', 'unknown')
-                if status == 'success':
-                    f.write(f"#### 🤖 AI Analysis (Foundation-Sec-8B)\n\n{ai['message']}\n\n")
-                elif status == 'skipped':
-                    f.write("#### 🤖 AI Analysis\n\n*LLM analysis was skipped.*\n\n")
-                else:
-                    f.write(
-                        f"#### 🤖 AI Analysis\n\n"
-                        f"⚠️ *{ai.get('message', 'Analysis unavailable.')}*\n\n"
-                    )
-            else:
-                f.write(f"#### 🤖 AI Analysis\n\n{ai}\n\n")
-
-            refs = entry.get('metadata', {}).get('references', [])
-            if refs:
-                f.write("#### References\n\n")
-                for ref in refs:
-                    f.write(f"- {ref}\n")
-                f.write("\n")
-
-            f.write("---\n\n")
+        f.write("\n---\n\n")
+        f.write("*Built with Llama*\n")
 
     logger.info(f"Markdown report written to '{md_path}'.")
     return md_path
@@ -840,7 +1001,7 @@ def generate_json_report(report, output_dir, config, logger):
 
     json_output = {
         "report_metadata": {
-            "tool": "aiowaspscan",
+            "tool": "aideepsast",
             "version": "2.0.0",
             "generated_at": utc_now_iso(),
             "target": config.get('target', 'N/A'),
@@ -972,8 +1133,9 @@ def main():
     )
 
     logger.info("=" * 60)
-    logger.info("   AI-Powered OWASP Top 10 Security Scanner v2.0.0")
-    logger.info("   Model: Cisco Foundation-Sec-8B (GGUF via llama-cli)")
+    logger.info("   AI Deep SAST v2.0.0")
+    logger.info("   Model: Foundation-Sec-8B (GGUF via llama-completion)")
+    logger.info("   Built with Llama")
     logger.info("=" * 60)
     logger.info(f"  Target:             {config['target']}")
     logger.info(f"  HF Repo:            {config['hf_repo']}")
@@ -989,6 +1151,7 @@ def main():
     logger.info(f"  Semgrep Config:     {config['semgrep_config']}")
     logger.info(f"  Semgrep Timeout:    {config['semgrep_timeout']}s")
     logger.info(f"  LLM Enabled:        {not config['skip_llm']}")
+    logger.info(f"  Skip LLM Rules:     {config.get('skip_llm_rules', 'none')}")
     logger.info(f"  Log Level:          {config['log_level']}")
     logger.info("=" * 60)
 

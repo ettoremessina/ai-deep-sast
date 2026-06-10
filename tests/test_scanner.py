@@ -1,6 +1,21 @@
 #!/usr/bin/env python3
+# Copyright 2026 Cisco Systems, Inc. and its affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# SPDX-License-Identifier: Apache-2.0
 """
-Unit Tests for AI-Powered OWASP Scanner
+Unit Tests for AI Deep SAST
 ========================================
 Run with: python -m pytest tests/test_scanner.py -v
 """
@@ -14,7 +29,7 @@ import tempfile
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from aiowaspscan import (
+from aideepsast import (
     merge_configuration,
     extract_code_snippet,
     build_prompt,
@@ -115,7 +130,7 @@ class TestPromptBuilding:
         )
         assert "OWASP Category" in prompt
         assert "Severity" in prompt
-        assert "Explanation" in prompt
+        assert "Attack Vector" in prompt
         assert "Remediation" in prompt
         assert "eval(user_input)" in prompt
         assert "python.lang.security.eval-injection" in prompt

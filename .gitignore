@@ -1,0 +1,54 @@
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Generated reports (contain sensitive vulnerability data)
+security-reports/
+security-reports-baseline-backup/
+test-reports*/
+docker-reports/
+
+# Stale report files in project root
+owasp_ai_report.md
+
+# Logs
+*.log
+
+# Model files (large, download from Hugging Face)
+foundation-sec-model/
+*.gguf
+
+# Environment / secrets
+.env
+.env.*
+config/secrets.yaml
+
+# Internal utility scripts (not for public release)
+run_guided_scans.sh
+compute_all_tps.py
+generate_findings_list.py
+generate_pareto_chart.py
+pareto_frontier.png
+
+# Internal docs (contain product-specific data)
+docs/icm-findings-*.md
+docs/deep-scan-testing-guide.md
+docs/scan-mode-comparison-report.md
+docs/rule-guided-scan-design.md
+FOUNDRY_DESIGN.md
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

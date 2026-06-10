@@ -1,17 +1,17 @@
-# 🛡️ AI-Powered OWASP Top 10 Security Scanner
+# AI Deep SAST
 
-An automated security scanning tool that combines **Semgrep** static analysis
-with **Cisco Foundation-Sec-8B-Instruct** LLM-powered vulnerability analysis
-for CI/CD pipelines.
+LLM-powered deep static analysis tool that combines **Semgrep** static analysis
+with **frontier model** vulnerability analysis for CI/CD pipelines.
 
-Uses a **hybrid approach**: Semgrep runs on every commit for fast feedback,
-AI analysis runs only when findings are detected on pull requests for
-deep remediation guidance.
+Two scan modes:
+- **Fast scan**: Semgrep + local Foundation-Sec-8B LLM for per-finding triage (~5 min)
+- **Deep scan**: Tree-sitter indexing + frontier model (GPT-4o, Claude, etc.) for whole-codebase analysis (~30 min–14 hr depending on mode)
 
 ## Features
 
 - Automated OWASP Top 10 vulnerability detection via Semgrep
-- AI-powered analysis using [Cisco Foundation-Sec-8B-Instruct](https://huggingface.co/fdtn-ai/Foundation-Sec-8B-Instruct) (GGUF quantised)
+- **Secret scanning**: built-in detection of hardcoded passwords, API keys, and tokens in config files (`.properties`, `.env`, `.conf`, `.cfg`, `.ini`)
+- AI-powered analysis using [Foundation-Sec-8B-Instruct](https://huggingface.co/fdtn-ai/Foundation-Sec-8B-Instruct) (GGUF quantised)
 - Structured 9-point security analysis per finding:
   - OWASP category mapping
   - CWE mapping
@@ -20,7 +20,9 @@ deep remediation guidance.
   - Business and technical impact
   - Remediation with corrected code
   - Defence in depth recommendations
-  - References (CWE, OWASP, Cisco advisories)
+  - References (CWE, OWASP)
+- **Severity-based filtering**: only analyse findings at or above a configurable threshold with the LLM
+- **Smart LLM skipping**: deterministic rules (e.g. custom secret detection) use Semgrep metadata instead of LLM, dramatically reducing scan time
 - Multiple report formats: Markdown, JSON, JUnit XML
 - Quality gate with configurable severity thresholds
 - Secure prompt handling (no code in shell history or process logs)
@@ -65,17 +67,28 @@ Developer Pushes Code
 
 ## Project Structure
 ```
-ai-owasp-scanner/
-├── aiowaspscan.py              # Core scanner engine
+ai-deep-sast/
+├── aideepsast.py               # Fast-path scanner (Semgrep + Foundation-Sec-8B)
+├── deepscan.py                 # Deep scan CLI (tree-sitter + frontier LLM)
+├── deepscan_reporter.py        # Deep scan report generator
+├── llm_client.py               # Generic OpenAI-compatible LLM client
+├── detector.py                 # LLM-powered vulnerability detector
+├── triager.py                  # Evidence-gated triage agent
+├── finding_store.py            # SQLite finding store & work queue
+├── indexer.py                  # Tree-sitter code indexer (15 languages)
+├── coverage_guide.py           # Scan coverage tracker
+├── redactor.py                 # Secret redaction before LLM calls
+├── rule_matcher.py             # ASVS/CodeGuard rule matcher
 ├── requirements.txt            # Python dependencies
-├── Dockerfile                  # Docker image for Jenkins agent
-├── Jenkinsfile                 # Hybrid CI/CD pipeline
+├── Dockerfile                  # Docker image
+├── Jenkinsfile                 # CI/CD pipeline
 ├── config/
-│   └── scanner_config.yaml     # Default configuration
-├── tests/
-│   └── test_scanner.py         # Unit tests
-├── samples/
-│   └── sample_vuln.py          # Sample vulnerable file for testing
+│   ├── scanner_config.yaml     # Default configuration
+│   ├── custom-secrets.yaml     # Custom Semgrep rules for secret detection
+│   ├── asvs/                   # ASVS 5.0 requirements (CC BY-SA 4.0, OWASP Foundation)
+│   └── codeguard/              # CodeGuard security patterns
+├── tests/                      # Test suite (240+ tests)
+├── samples/                    # Sample vulnerable files
 └── README.md                   # This file
 ```
 ---
@@ -103,7 +116,13 @@ ai-owasp-scanner/
 
 ```bash
 git clone <repository-url>
-cd ai-owasp-scanner
+cd ai-deep-sast
+
+# Create and activate a virtual environment (recommended)
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Install dependencies inside the virtual environment
 pip install -r requirements.txt
 ```
 ### Step 2: Pre-Download the Model
@@ -111,7 +130,7 @@ pip install -r requirements.txt
 This downloads the ~8 GB GGUF model once. Subsequent runs use the cached version.
 
 ```bash
-llama-cli \
+llama-completion \
     --hf-repo fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF \
     --hf-file foundation-sec-8b-instruct-q8_0.gguf \
     -p "test" \
@@ -120,7 +139,7 @@ llama-cli \
 
 ### Step 3: Verify Model Speed
 ```bash
-time llama-cli \
+time llama-completion \
     --hf-repo fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF \
     --hf-file foundation-sec-8b-instruct-q8_0.gguf \
     -c 2048 -ngl -1 -t 6 --temp 0.1 -n 256 \
@@ -132,13 +151,13 @@ Expected: ~10-30 seconds on Apple Silicon.
 ### Step 4: Run Your First Scan
 ```bash
 # Full scan with AI analysis
-python3 aiowaspscan.py --target samples/sample_vuln.py
+python3 aideepsast.py --target samples/sample_vuln.py
 
 # Semgrep only (no AI, instant results)
-python3 aiowaspscan.py --target samples/sample_vuln.py --skip-llm
+python3 aideepsast.py --target samples/sample_vuln.py --skip-llm
 
 # Using config file
-python3 aiowaspscan.py \
+python3 aideepsast.py \
     --config config/scanner_config.yaml \
     --target samples/sample_vuln.py
     ```
@@ -160,22 +179,32 @@ cat security-reports/owasp_junit_report.xml
 ### Basic Commands
 ```bash
 # Scan a single file
-python3 aiowaspscan.py --target app.py
+python3 aideepsast.py --target app.py
 
 # Scan a directory
-python3 aiowaspscan.py --target ./src
+python3 aideepsast.py --target ./src
 
 # Scan with custom severity threshold
-python3 aiowaspscan.py --target ./src --severity-threshold ERROR
+python3 aideepsast.py --target ./src --severity-threshold ERROR
 
 # Scan without AI (Semgrep only — fast)
-python3 aiowaspscan.py --target ./src --skip-llm
+python3 aideepsast.py --target ./src --skip-llm
 
 # Scan with config file
-python3 aiowaspscan.py --config config/scanner_config.yaml
+python3 aideepsast.py --config config/scanner_config.yaml
+
+# Scan with ERROR-only threshold (skip WARNING/INFO for LLM)
+python3 aideepsast.py \
+    --target ./src \
+    --severity-threshold ERROR
+
+# Disable LLM skipping for custom rules (analyse everything with AI)
+python3 aideepsast.py \
+    --target ./src \
+    --skip-llm-rules ""
 
 # Scan with all options
-python3 aiowaspscan.py \
+python3 aideepsast.py \
     --target ./src \
     --hf-repo fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF \
     --hf-file foundation-sec-8b-instruct-q8_0.gguf \
@@ -206,12 +235,13 @@ python3 aiowaspscan.py \
 | --output-dir | Report output directory | security-reports |
 | --severity-threshold | Fail threshold (INFO/WARNING/ERROR) | WARNING |
 | --llm-timeout | LLM timeout in seconds | 600 |
-| --semgrep-config | Semgrep ruleset | p/owasp-top-ten |
+| --semgrep-config | Semgrep ruleset(s), comma-separated | p/owasp-top-ten,p/secrets,config/custom-secrets.yaml |
 | --semgrep-timeout | Semgrep timeout in seconds | 300 |
 | --config | YAML config file path | None |
 | --log-level | Log level (DEBUG/INFO/WARNING/ERROR) | INFO |
 | --log-file | Log file path | None (console only) |
-| --skip-llm | Skip AI analysis | false
+| --skip-llm | Skip AI analysis | false |
+| --skip-llm-rules | Rule ID prefixes to skip LLM for (comma-separated) | config. |
 
 
 ## Configuration Priority
@@ -238,11 +268,125 @@ Settings are resolved in this order (highest to lowest):
 | SCANNER_OUTPUT_DIR | Report output directory | security-reports |
 | SCANNER_SEVERITY_THRESHOLD | Fail threshold (INFO/WARNING/ERROR) | WARNING |
 | SCANNER_LLM_TIMEOUT | LLM timeout in seconds | 600 |
-| SCANNER_SEMGREP_CONFIG | Semgrep ruleset | p/owasp-top-ten |
+| SCANNER_SEMGREP_CONFIG | Semgrep ruleset(s), comma-separated | p/owasp-top-ten,p/secrets,config/custom-secrets.yaml |
 | SCANNER_SEMGREP_TIMEOUT | Semgrep timeout in seconds | 300 |
 | SCANNER_LOG_LEVEL | Log level (DEBUG/INFO/WARNING/ERROR) | INFO |
 | SCANNER_LOG_FILE | Log file path | None (console only) |
 | SCANNER_SKIP_LLM | Skip AI analysis | false
+
+## Semgrep Rulesets
+
+The scanner runs three Semgrep rulesets by default:
+
+| Ruleset | Source | Detects |
+|---------|--------|---------|
+| `p/owasp-top-ten` | Semgrep Registry | OWASP Top 10 vulnerabilities (SQL injection, XSS, XXE, path traversal, etc.) |
+| `p/secrets` | Semgrep Registry | Known vendor secret patterns (AWS keys, GitHub PATs, Stripe keys, etc.) |
+| `config/custom-secrets.yaml` | Custom (this repo) | Hardcoded passwords, Redis credentials, API keys, and JDBC connection strings in config files |
+
+### Custom Secret Detection Rules
+
+The `config/custom-secrets.yaml` file contains 4 rules using Semgrep's `generic` language mode, which performs regex pattern matching on file types Semgrep cannot natively parse (e.g. `.properties`):
+
+| Rule ID | Severity | Detects |
+|---------|----------|---------|
+| `hardcoded-password-properties` | ERROR | `password=`, `passwd=`, `pwd=`, `secret=`, `credential=` in `.properties`, `.env`, `.conf`, `.cfg`, `.ini` |
+| `hardcoded-redis-password` | ERROR | `redis.sentinel.password:`, `redis.auth=`, etc. in config files |
+| `hardcoded-api-key-properties` | ERROR | `api_key=`, `auth_token=`, `access_token=`, `bearer_token=` in config files |
+| `hardcoded-jdbc-connection-string` | WARNING | JDBC URLs with hardcoded internal IP addresses |
+
+These rules complement `p/secrets` which only matches known vendor token formats and cannot parse `.properties` files.
+
+### Smart LLM Skipping
+
+Findings from deterministic rules (where CWE, OWASP category, and remediation are already known from the Semgrep rule metadata) skip LLM analysis automatically. This is controlled by the `skip_llm_rules` setting:
+
+```yaml
+# In scanner_config.yaml
+skip_llm_rules: "config."   # Skip LLM for all rules with IDs starting with "config."
+```
+
+```bash
+# CLI override: skip LLM for multiple rule prefixes
+python3 aideepsast.py --target ./src --skip-llm-rules "config.,generic."
+
+# CLI override: disable skipping (analyse everything with LLM)
+python3 aideepsast.py --target ./src --skip-llm-rules ""
+```
+
+This reduces scan time significantly when custom rules produce many findings (e.g. 92 secret findings across 21 `.properties` files would add ~60 minutes of LLM calls with no added value).
+
+## Deep Scan
+
+The deep scan analyses every function in your codebase using a frontier LLM (GPT-4o, Claude, etc.) via an OpenAI-compatible API. It supports 15 languages via tree-sitter: Python, Java, JavaScript, TypeScript, Go, C, C++, Ruby, Rust, Scala, Kotlin, C#, PHP, Swift, and Bash.
+
+### Quick Start
+
+```bash
+# Set your LLM provider
+export LLM_API_KEY=sk-proj-abc123...
+export LLM_BASE_URL=https://api.openai.com/v1   # default
+export LLM_MODEL=gpt-4o                          # default
+
+# Run deep scan (index + detect + triage + report)
+python3 deepscan.py --target ./src
+
+# Dry run (index only, no LLM calls — free)
+python3 deepscan.py --target ./src --dry-run
+
+# Guided mode (faster, targeted — recommended)
+python3 deepscan.py --target ./src --guided --guide-rules both
+```
+
+### LLM Provider Examples
+
+```bash
+# OpenAI
+export LLM_API_KEY=sk-proj-...
+export LLM_MODEL=gpt-4o
+
+# Anthropic (via OpenAI-compatible proxy like LiteLLM)
+export LLM_BASE_URL=http://localhost:4000/v1
+export LLM_API_KEY=sk-ant-...
+export LLM_MODEL=claude-sonnet-4-20250514
+
+# Azure OpenAI
+export LLM_BASE_URL=https://your-resource.openai.azure.com/openai/deployments/gpt-4o/
+export LLM_API_KEY=your-azure-key
+
+# Ollama (local, free)
+export LLM_BASE_URL=http://localhost:11434/v1
+export LLM_API_KEY=ollama
+export LLM_MODEL=llama3.1:70b
+```
+
+### Deep Scan CLI Arguments
+
+| Argument | Description | Default |
+|----------|-------------|---------|
+| `--target` | File or directory to scan | (required) |
+| `--output-dir` | Report output directory | security-reports |
+| `--db-path` | SQLite database path | `<output-dir>/deepscan.db` |
+| `--llm-url` | LLM API base URL | env `LLM_BASE_URL` or `https://api.openai.com/v1` |
+| `--llm-api-key` | LLM API key | env `LLM_API_KEY` |
+| `--llm-model` | Model name | env `LLM_MODEL` or `gpt-4o` |
+| `--dry-run` | Index only, no LLM calls | false |
+| `--guided` | Use rule-guided scanning | false |
+| `--guide-rules` | Rule set: `asvs`, `codeguard`, `both`, `semgrep` | both |
+| `--skip-exploratory` | Skip exploratory detection | false |
+| `--show-needs-review` | Include needs-review findings | false |
+| `--log-level` | Log level | INFO |
+| `--json-summary` | Print JSON summary to stdout | false |
+
+### Scan Modes
+
+| Mode | Flag | Speed | Description |
+|------|------|-------|-------------|
+| Brute-force | (default) | Slowest | Every function analysed by LLM |
+| ASVS-guided | `--guided --guide-rules asvs` | Fast | ASVS 5.0 requirements guide analysis |
+| CodeGuard-guided | `--guided --guide-rules codeguard` | Fast | CodeGuard patterns guide analysis |
+| Combined | `--guided --guide-rules both` | Fast | ASVS + CodeGuard combined |
+| Semgrep-guided | `--guided --guide-rules semgrep` | Fastest | Semgrep findings validated by LLM |
 
 ## Exit Codes
 
@@ -292,8 +436,8 @@ For each finding, the AI provides:
 ### Step 1: Build the Docker Image
 
 ```bash
-docker build -t your-registry/ai-owasp-scanner:latest .
-docker push your-registry/ai-owasp-scanner:latest
+docker build -t your-registry/ai-deep-sast:latest .
+docker push your-registry/ai-deep-sast:latest
 ```
 
 ### Step 2: Pre-Cache the Model (Recommended)
@@ -301,7 +445,7 @@ docker push your-registry/ai-owasp-scanner:latest
 On the Jenkins agent or in the Docker image build, pre-download the model:
 
 ```bash
-llama-cli \
+llama-completion \
     --hf-repo fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF \
     --hf-file foundation-sec-8b-instruct-q8_0.gguf \
     -p "test" \
@@ -313,7 +457,7 @@ Or mount a shared model cache volume on Jenkins agents:
 ```bash
 # On the host, download once:
 mkdir -p /model-cache
-LLAMA_CACHE=/model-cache llama-cli \
+LLAMA_CACHE=/model-cache llama-completion \
     --hf-repo fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF \
     --hf-file foundation-sec-8b-instruct-q8_0.gguf \
     -p "test" -n 1
@@ -361,13 +505,16 @@ The included Jenkinsfile implements the hybrid pipeline:
 ### Run Unit Tests:
 
 ```bash
+# Ensure the virtual environment is active
+source .venv/bin/activate
+
 pip install pytest
 python -m pytest tests/ -v
 ```
 
 ### Test Semgrep Only (No AI)
 ```bash
-python3 aiowaspscan.py \
+python3 aideepsast.py \
     --target samples/sample_vuln.py \
     --skip-llm \
     --output-dir test-reports
@@ -376,22 +523,42 @@ echo "Exit code: $?"
 
 ### Test Full Scan With AI
 ```bash
-python3 aiowaspscan.py \
+python3 aideepsast.py \
     --target samples/sample_vuln.py \
     --config config/scanner_config.yaml \
     --output-dir test-reports-full
 echo "Exit code: $?"
 ```
 
+### Test Secret Detection (Config Files)
+```bash
+# All sample config files — triggers custom secret rules
+python3 aideepsast.py \
+    --target samples/ \
+    --skip-llm \
+    --output-dir test-reports-secrets
+echo "Exit code: $?"  # Should be 1 (secrets found)
+```
+
+### Test Java Source Code Scan
+```bash
+# Java OWASP vulnerabilities — SQLi, XXE, path traversal, weak SSL
+python3 aideepsast.py \
+    --target samples/SampleVuln.java \
+    --skip-llm \
+    --output-dir test-reports-java
+echo "Exit code: $?"  # Should be 1
+```
+
 ### Test Different Severity Thresholds
 ```bash
 # Only fail on ERROR
-python3 aiowaspscan.py \
+python3 aideepsast.py \
     --target samples/sample_vuln.py --skip-llm \
     --severity-threshold ERROR
 
 # Fail on everything including INFO
-python3 aiowaspscan.py \
+python3 aideepsast.py \
     --target samples/sample_vuln.py --skip-llm \
     --severity-threshold INFO
 ```
@@ -400,21 +567,21 @@ python3 aiowaspscan.py \
 ```bash
 # Clean file (no vulnerabilities)
 echo 'print("hello")' > /tmp/clean.py
-python3 aiowaspscan.py --target /tmp/clean.py --skip-llm
+python3 aideepsast.py --target /tmp/clean.py --skip-llm
 echo "Exit code: $?"  # Should be 0
 
 # Non-existent target
-python3 aiowaspscan.py --target /nonexistent
+python3 aideepsast.py --target /nonexistent
 echo "Exit code: $?"  # Should be 2
 ```
 
 ### Test Docker Build
 ```bash
-docker build -t ai-owasp-scanner:local .
+docker build -t ai-deep-sast:local .
 docker run --rm \
     -v $(pwd)/samples:/app/samples \
     -v $(pwd)/docker-reports:/app/security-reports \
-    ai-owasp-scanner:local \
+    ai-deep-sast:local \
     --target samples/sample_vuln.py --skip-llm
 ```
 
@@ -425,7 +592,7 @@ The scanner can be run in a Docker container for reproducible environments and C
 ### Build the Docker Image
 
 ```bash
-docker build -t ai-owasp-scanner:latest .
+docker build -t ai-deep-sast:latest .
 ```
 
 ### Run with Docker
@@ -435,7 +602,7 @@ docker build -t ai-owasp-scanner:latest .
 docker run --rm \
     -v $(pwd):/app/src \
     -v $(pwd)/docker-reports:/app/security-reports \
-    ai-owasp-scanner:latest \
+    ai-deep-sast:latest \
     --target src/ --skip-llm
 
 # Full scan with AI analysis (mount model cache for faster startup)
@@ -443,14 +610,14 @@ docker run --rm \
     -v $(pwd):/app/src \
     -v $(pwd)/docker-reports:/app/security-reports \
     -v /model-cache:/root/.cache/llama.cpp \
-    ai-owasp-scanner:latest \
+    ai-deep-sast:latest \
     --target src/
 
 # Scan with custom config
 docker run --rm \
     -v $(pwd):/app/src \
     -v $(pwd)/docker-reports:/app/security-reports \
-    ai-owasp-scanner:latest \
+    ai-deep-sast:latest \
     --target src/ --severity-threshold ERROR --skip-llm
 ```
 
@@ -465,7 +632,7 @@ mkdir -p /model-cache
 # Download model once
 docker run --rm \
     -v /model-cache:/root/.cache/llama.cpp \
-    ai-owasp-scanner:latest \
+    ai-deep-sast:latest \
     --target samples/sample_vuln.py
 
 # Subsequent runs use the cached model
@@ -473,7 +640,7 @@ docker run --rm \
     -v $(pwd):/app/src \
     -v $(pwd)/docker-reports:/app/security-reports \
     -v /model-cache:/root/.cache/llama.cpp \
-    ai-owasp-scanner:latest \
+    ai-deep-sast:latest \
     --target src/
 ```
 
@@ -484,7 +651,7 @@ For air-gapped environments or faster cold starts, uncomment the model download 
 ```dockerfile
 # In Dockerfile, uncomment lines 74-80:
 RUN mkdir -p /root/.cache/llama.cpp && \
-    llama-cli \
+    llama-completion \
         --hf-repo fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF \
         --hf-file foundation-sec-8b-instruct-q8_0.gguf \
         -p "test" \
@@ -523,24 +690,24 @@ RUN mkdir -p /root/.cache/llama.cpp && \
 
 ```
 # Reduce max tokens (faster, shorter analysis)
-python3 aiowaspscan.py --target ./src --max-tokens 512
+python3 aideepsast.py --target ./src --max-tokens 512
 
 # Reduce context window
-python3 aiowaspscan.py --target ./src --ctx-size 1024
+python3 aideepsast.py --target ./src --ctx-size 1024
 
 # Use more CPU threads
-python3 aiowaspscan.py --target ./src --threads 8
+python3 aideepsast.py --target ./src --threads 8
 ```
 
 ## Model Information
 
 | Property | Value |
 |----------|-------|
-| Model | Cisco Foundation-Sec-8B-Instruct |
+| Model | Foundation-Sec-8B-Instruct |
 | Quantisation | Q8_0 (GGUF) |
 | Size | ~8 GB |
 | Hugging Face | fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF |
-| Inference Engine | llama.cpp via llama-cli |
+| Inference Engine | llama.cpp via llama-completion |
 | Specialisation | Cybersecurity analysis and secure code review |
 | Context Window | Up to 8192 tokens (default: 2048 for performance) |
 
@@ -550,17 +717,18 @@ python3 aiowaspscan.py --target ./src --threads 8
 - **Instruct-tuned**: Follows structured prompts accurately
 - **GGUF quantised**: Runs efficiently on consumer hardware
 - **Local execution**: No code leaves your machine
-- **Cisco-developed**: Enterprise-grade security foundation model
+- **Open source**: Community-driven security foundation model
 
 ## Security Notes
 
-- ✅ The LLM runs 100% locally — no code is sent to external services
+- ✅ **Fast scan**: LLM runs 100% locally — no code is sent to external services
+- ✅ **Deep scan**: Secret values are redacted before sending code to the LLM API
 - ✅ Prompts are written to temporary files, never passed via CLI arguments
-- ✅ Temporary files are cleaned up after each inference call
+- ✅ API keys are loaded from environment variables, never hardcoded
+- ⚠️ **Deep scan** sends source code (with secrets redacted) to your configured LLM provider
 - ⚠️ Reports contain detailed vulnerability data — treat as confidential
 - ⚠️ Add security-reports/ to your .gitignore
 - ⚠️ Restrict Jenkins job visibility to authorised personnel
-- ⚠️ Store the Docker image in a private container registry
 
 ### .gitignore
 
@@ -590,14 +758,14 @@ scp -r ~/.cache/llama.cpp/ user@your-mac:~/.cache/llama.cpp/
 
 ### LLM Timeout
 
-If llama-cli times out:
+If llama-completion times out:
 
 ```
 # Increase timeout
-python3 aiowaspscan.py --target ./src --llm-timeout 600
+python3 aideepsast.py --target ./src --llm-timeout 600
 
 # Pre-download the model first
-llama-cli \
+llama-completion \
     --hf-repo fdtn-ai/Foundation-Sec-8B-Instruct-Q8_0-GGUF \
     --hf-file foundation-sec-8b-instruct-q8_0.gguf \
     -p "test" -n 1
@@ -609,13 +777,13 @@ If the model causes memory issues:
 
 ```
 # Reduce context window
-python3 aiowaspscan.py --target ./src --ctx-size 1024
+python3 aideepsast.py --target ./src --ctx-size 1024
 
 # Reduce generation tokens
-python3 aiowaspscan.py --target ./src --max-tokens 512
+python3 aideepsast.py --target ./src --max-tokens 512
 
 # Use CPU only (slower but less memory)
-python3 aiowaspscan.py --target ./src --n-gpu-layers 0
+python3 aideepsast.py --target ./src --n-gpu-layers 0
 ```
 
 ### Semgrep Returns No Findings
@@ -623,7 +791,7 @@ python3 aiowaspscan.py --target ./src --n-gpu-layers 0
 If Semgrep finds no issues with code you expect to be flagged:
 ```
 # Try a broader ruleset
-python3 aiowaspscan.py --target ./src --semgrep-config p/python
+python3 aideepsast.py --target ./src --semgrep-config p/python
 
 # Check what Semgrep detects directly
 semgrep --config=p/owasp-top-ten --json samples/sample_vuln.py | python3 -m json.tool
@@ -638,5 +806,11 @@ semgrep --config=p/owasp-top-ten --json samples/sample_vuln.py | python3 -m json
 5. Submit a pull request
 
 ## License
-Internal Use Only — Cisco Systems, Inc.
 
+Apache License 2.0 — See [LICENSE](LICENSE) for details.
+
+This project uses [Foundation-Sec-8B-Instruct](https://huggingface.co/fdtn-ai/Foundation-Sec-8B-Instruct),
+which is built on Meta's Llama 3.1 architecture and is subject to the
+[Llama Community License Agreement](https://github.com/meta-llama/llama-models/blob/main/README.md).
+
+**Built with Llama**

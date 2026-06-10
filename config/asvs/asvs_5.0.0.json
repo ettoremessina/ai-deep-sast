@@ -1,0 +1,458 @@
+{
+  "version": "5.0.0",
+  "source": "https://github.com/OWASP/ASVS/tree/v5.0.0",
+  "license": "Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)",
+  "copyright": "Copyright (c) 2023 OWASP Foundation",
+  "requirements": [
+    {
+      "id": "1.2.1",
+      "chapter": "V1",
+      "chapter_name": "Encoding and Sanitization",
+      "description": "Verify that output encoding for an HTTP response, HTML document, or XML document is relevant for the context required, such as encoding the relevant characters for HTML elements, HTML attributes, HTML comments, CSS, or HTTP header fields.",
+      "level": 1,
+      "cwe": ["CWE-79"],
+      "keywords": ["XSS", "cross-site scripting", "output encoding", "HTML encoding"]
+    },
+    {
+      "id": "1.2.2",
+      "chapter": "V1",
+      "chapter_name": "Encoding and Sanitization",
+      "description": "Verify that when dynamically building URLs, untrusted data is encoded according to its context. Ensure that only safe URL protocols are permitted (e.g., disallow javascript: or data:).",
+      "level": 1,
+      "cwe": ["CWE-79", "CWE-601"],
+      "keywords": ["URL encoding", "open redirect", "javascript protocol"]
+    },
+    {
+      "id": "1.2.3",
+      "chapter": "V1",
+      "chapter_name": "Encoding and Sanitization",
+      "description": "Verify that output encoding or escaping is used when dynamically building JavaScript content (including JSON), to avoid JavaScript and JSON injection.",
+      "level": 1,
+      "cwe": ["CWE-79"],
+      "keywords": ["JavaScript injection", "JSON injection", "output encoding"]
+    },
+    {
+      "id": "1.2.4",
+      "chapter": "V1",
+      "chapter_name": "Encoding and Sanitization",
+      "description": "Verify that data selection or database queries use parameterized queries, ORMs, entity frameworks, or are otherwise protected from SQL Injection and other database injection attacks.",
+      "level": 1,
+      "cwe": ["CWE-89"],
+      "keywords": ["SQL injection", "parameterized queries", "prepared statement", "ORM"]
+    },
+    {
+      "id": "1.2.5",
+      "chapter": "V1",
+      "chapter_name": "Encoding and Sanitization",
+      "description": "Verify that the application protects against OS command injection and that operating system calls use parameterized OS queries or use contextual command line output encoding.",
+      "level": 1,
+      "cwe": ["CWE-78"],
+      "keywords": ["command injection", "OS command", "Runtime.exec", "ProcessBuilder", "subprocess"]
+    },
+    {
+      "id": "1.2.6",
+      "chapter": "V1",
+      "chapter_name": "Encoding and Sanitization",
+      "description": "Verify that the application protects against LDAP injection vulnerabilities.",
+      "level": 2,
+      "cwe": ["CWE-90"],
+      "keywords": ["LDAP injection", "directory service"]
+    },
+    {
+      "id": "1.2.7",
+      "chapter": "V1",
+      "chapter_name": "Encoding and Sanitization",
+      "description": "Verify that the application is protected against XPath injection attacks by using query parameterization or precompiled queries.",
+      "level": 2,
+      "cwe": ["CWE-643"],
+      "keywords": ["XPath injection", "XML query"]
+    },
+    {
+      "id": "1.3.1",
+      "chapter": "V1",
+      "chapter_name": "Encoding and Sanitization",
+      "description": "Verify that all untrusted HTML input from WYSIWYG editors or similar is sanitized using a well-known and secure HTML sanitization library or framework feature.",
+      "level": 1,
+      "cwe": ["CWE-79"],
+      "keywords": ["HTML sanitization", "XSS", "WYSIWYG"]
+    },
+    {
+      "id": "1.3.2",
+      "chapter": "V1",
+      "chapter_name": "Encoding and Sanitization",
+      "description": "Verify that the application avoids the use of eval() or other dynamic code execution features such as Spring Expression Language (SpEL).",
+      "level": 1,
+      "cwe": ["CWE-94", "CWE-95"],
+      "keywords": ["eval", "code injection", "SpEL", "dynamic code execution"]
+    },
+    {
+      "id": "1.5.1",
+      "chapter": "V1",
+      "chapter_name": "Encoding and Sanitization",
+      "description": "Verify that deserialization of untrusted data is avoided or is protected in both custom code and third-party libraries.",
+      "level": 1,
+      "cwe": ["CWE-502"],
+      "keywords": ["deserialization", "ObjectInputStream", "readObject", "XMLDecoder", "pickle", "yaml.load"]
+    },
+    {
+      "id": "2.1.1",
+      "chapter": "V2",
+      "chapter_name": "Validation and Business Logic",
+      "description": "Verify that input validation is performed on all user-supplied data, ensuring data type, length, range, and format requirements are enforced.",
+      "level": 1,
+      "cwe": ["CWE-20"],
+      "keywords": ["input validation", "getParameter", "request parameter", "user input"]
+    },
+    {
+      "id": "5.1.1",
+      "chapter": "V5",
+      "chapter_name": "File Handling",
+      "description": "Verify that file upload functionality limits file size, validates file types, and stores files securely.",
+      "level": 1,
+      "cwe": ["CWE-434"],
+      "keywords": ["file upload", "unrestricted upload", "file type validation", "MultipartFile"]
+    },
+    {
+      "id": "5.1.2",
+      "chapter": "V5",
+      "chapter_name": "File Handling",
+      "description": "Verify that files obtained from untrusted sources are scanned by antivirus scanners to prevent upload of known malicious content.",
+      "level": 1,
+      "cwe": ["CWE-509"],
+      "keywords": ["malware", "antivirus", "file scanning"]
+    },
+    {
+      "id": "5.2.1",
+      "chapter": "V5",
+      "chapter_name": "File Handling",
+      "description": "Verify that user-submitted filename metadata is not used directly by system or framework filesystems to prevent path traversal.",
+      "level": 1,
+      "cwe": ["CWE-22"],
+      "keywords": ["path traversal", "directory traversal", "zip slip", "filename", "ZipEntry", "getName"]
+    },
+    {
+      "id": "5.2.2",
+      "chapter": "V5",
+      "chapter_name": "File Handling",
+      "description": "Verify that user-submitted filename metadata is validated or ignored to prevent disclosure, creation, updating or removal of files.",
+      "level": 1,
+      "cwe": ["CWE-73"],
+      "keywords": ["file path manipulation", "external filepath control", "filename validation"]
+    },
+    {
+      "id": "6.1.1",
+      "chapter": "V6",
+      "chapter_name": "Authentication",
+      "description": "Verify that passwords are stored using an approved one-way key derivation or password hashing function.",
+      "level": 1,
+      "cwe": ["CWE-916"],
+      "keywords": ["password hashing", "bcrypt", "argon2", "scrypt", "PBKDF2", "MD5", "SHA1"]
+    },
+    {
+      "id": "6.2.1",
+      "chapter": "V6",
+      "chapter_name": "Authentication",
+      "description": "Verify that credential recovery does not reveal the current password and that the new password is not sent in clear text to the user.",
+      "level": 1,
+      "cwe": ["CWE-640"],
+      "keywords": ["password recovery", "credential reset", "cleartext password"]
+    },
+    {
+      "id": "6.3.1",
+      "chapter": "V6",
+      "chapter_name": "Authentication",
+      "description": "Verify that authentication decisions are logged, including failed attempts.",
+      "level": 1,
+      "cwe": ["CWE-778"],
+      "keywords": ["authentication logging", "login attempt", "brute force"]
+    },
+    {
+      "id": "7.1.1",
+      "chapter": "V7",
+      "chapter_name": "Session Management",
+      "description": "Verify that session tokens are generated using a cryptographically secure pseudo-random number generator.",
+      "level": 1,
+      "cwe": ["CWE-330"],
+      "keywords": ["session token", "random", "CSPRNG", "SecureRandom", "session ID"]
+    },
+    {
+      "id": "7.2.1",
+      "chapter": "V7",
+      "chapter_name": "Session Management",
+      "description": "Verify that session tokens are invalidated when the user logs out.",
+      "level": 1,
+      "cwe": ["CWE-613"],
+      "keywords": ["session invalidation", "logout", "session.invalidate"]
+    },
+    {
+      "id": "7.3.1",
+      "chapter": "V7",
+      "chapter_name": "Session Management",
+      "description": "Verify that cookie-based session tokens have the Secure, HttpOnly, and SameSite attributes set.",
+      "level": 1,
+      "cwe": ["CWE-614", "CWE-1004"],
+      "keywords": ["cookie security", "HttpOnly", "Secure flag", "SameSite", "Cookie"]
+    },
+    {
+      "id": "8.1.1",
+      "chapter": "V8",
+      "chapter_name": "Authorization",
+      "description": "Verify that access control rules are enforced on a trusted service layer and not on the client side.",
+      "level": 1,
+      "cwe": ["CWE-602"],
+      "keywords": ["access control", "authorization", "RBAC", "permission check"]
+    },
+    {
+      "id": "8.1.2",
+      "chapter": "V8",
+      "chapter_name": "Authorization",
+      "description": "Verify that the application protects against insecure direct object references (IDOR).",
+      "level": 1,
+      "cwe": ["CWE-639"],
+      "keywords": ["IDOR", "direct object reference", "authorization bypass"]
+    },
+    {
+      "id": "9.1.1",
+      "chapter": "V9",
+      "chapter_name": "Self-contained Tokens",
+      "description": "Verify that self-contained tokens (such as JWT) are validated using a trusted method, including signature verification.",
+      "level": 1,
+      "cwe": ["CWE-345"],
+      "keywords": ["JWT", "token validation", "signature verification", "JSON Web Token"]
+    },
+    {
+      "id": "11.1.1",
+      "chapter": "V11",
+      "chapter_name": "Cryptography",
+      "description": "Verify that only approved cryptographic algorithms are used, such as AES-256, RSA-2048+, SHA-256+.",
+      "level": 1,
+      "cwe": ["CWE-327"],
+      "keywords": ["weak cryptography", "DES", "MD5", "SHA1", "RC4", "Cipher", "MessageDigest"]
+    },
+    {
+      "id": "11.1.2",
+      "chapter": "V11",
+      "chapter_name": "Cryptography",
+      "description": "Verify that cryptographic keys are generated with sufficient entropy and managed securely.",
+      "level": 1,
+      "cwe": ["CWE-326", "CWE-321"],
+      "keywords": ["key management", "hardcoded key", "SecretKeySpec", "key generation"]
+    },
+    {
+      "id": "11.2.1",
+      "chapter": "V11",
+      "chapter_name": "Cryptography",
+      "description": "Verify that random values are generated using a cryptographically secure pseudo-random number generator.",
+      "level": 1,
+      "cwe": ["CWE-338"],
+      "keywords": ["weak random", "java.util.Random", "Math.random", "SecureRandom", "CSPRNG"]
+    },
+    {
+      "id": "12.1.1",
+      "chapter": "V12",
+      "chapter_name": "Secure Communication",
+      "description": "Verify that TLS is used for all connections and that insecure fallbacks are not possible.",
+      "level": 1,
+      "cwe": ["CWE-319"],
+      "keywords": ["TLS", "SSL", "cleartext", "HTTP", "insecure transport"]
+    },
+    {
+      "id": "12.1.2",
+      "chapter": "V12",
+      "chapter_name": "Secure Communication",
+      "description": "Verify that TLS certificate validation is not disabled or bypassed.",
+      "level": 1,
+      "cwe": ["CWE-295"],
+      "keywords": ["certificate validation", "TrustManager", "HostnameVerifier", "SSL bypass"]
+    },
+    {
+      "id": "13.1.1",
+      "chapter": "V13",
+      "chapter_name": "Configuration",
+      "description": "Verify that sensitive data is not exposed in error messages, stack traces, or debug information.",
+      "level": 1,
+      "cwe": ["CWE-209"],
+      "keywords": ["error handling", "stack trace", "exception message", "debug info", "printStackTrace"]
+    },
+    {
+      "id": "14.1.1",
+      "chapter": "V14",
+      "chapter_name": "Data Protection",
+      "description": "Verify that sensitive data is not logged in application logs.",
+      "level": 1,
+      "cwe": ["CWE-532"],
+      "keywords": ["sensitive data logging", "password in log", "PII", "log injection"]
+    },
+    {
+      "id": "14.2.1",
+      "chapter": "V14",
+      "chapter_name": "Data Protection",
+      "description": "Verify that credentials and secrets are not hardcoded in source code.",
+      "level": 1,
+      "cwe": ["CWE-798"],
+      "keywords": ["hardcoded credential", "hardcoded password", "hardcoded secret", "API key"]
+    },
+    {
+      "id": "14.3.1",
+      "chapter": "V14",
+      "chapter_name": "Data Protection",
+      "description": "Verify that sensitive data at rest is encrypted using approved algorithms.",
+      "level": 1,
+      "cwe": ["CWE-311"],
+      "keywords": ["encryption at rest", "data protection", "sensitive data storage"]
+    },
+    {
+      "id": "16.1.1",
+      "chapter": "V16",
+      "chapter_name": "Security Logging and Error Handling",
+      "description": "Verify that security-relevant events are logged with sufficient detail for forensic analysis.",
+      "level": 1,
+      "cwe": ["CWE-778"],
+      "keywords": ["security logging", "audit log", "forensic", "event logging"]
+    },
+    {
+      "id": "16.2.1",
+      "chapter": "V16",
+      "chapter_name": "Security Logging and Error Handling",
+      "description": "Verify that log data is protected from injection and tampering.",
+      "level": 1,
+      "cwe": ["CWE-117"],
+      "keywords": ["log injection", "CRLF injection", "log tampering", "log forging"]
+    },
+    {
+      "id": "4.1.1",
+      "chapter": "V4",
+      "chapter_name": "API and Web Services",
+      "description": "Verify that the application protects against Server-Side Request Forgery (SSRF) by validating and restricting URLs or IP addresses that the server can be instructed to fetch.",
+      "level": 1,
+      "cwe": ["CWE-918"],
+      "keywords": ["SSRF", "server-side request forgery", "HttpURLConnection", "requests.get", "urllib", "RestTemplate", "WebClient", "URL.openConnection", "fetch", "http.get"]
+    },
+    {
+      "id": "4.2.1",
+      "chapter": "V4",
+      "chapter_name": "API and Web Services",
+      "description": "Verify that the application is not vulnerable to mass assignment by restricting which fields can be set through user input.",
+      "level": 1,
+      "cwe": ["CWE-915"],
+      "keywords": ["mass assignment", "ModelAttribute", "from_dict", "update_attributes", "bind", "deserialize", "setProperties", "BeanUtils.copyProperties"]
+    },
+    {
+      "id": "3.1.1",
+      "chapter": "V3",
+      "chapter_name": "Web Frontend Security",
+      "description": "Verify that CORS policy is properly configured and does not use wildcard origins for sensitive endpoints.",
+      "level": 1,
+      "cwe": ["CWE-942"],
+      "keywords": ["CORS", "Access-Control-Allow-Origin", "crossorigin", "cors.allow", "CorsFilter", "addCorsMappings"]
+    },
+    {
+      "id": "3.2.1",
+      "chapter": "V3",
+      "chapter_name": "Web Frontend Security",
+      "description": "Verify that Content Security Policy (CSP) and anti-clickjacking headers (X-Frame-Options) are configured to mitigate UI redressing attacks.",
+      "level": 1,
+      "cwe": ["CWE-1021"],
+      "keywords": ["Content-Security-Policy", "X-Frame-Options", "clickjacking", "CSP", "frame-ancestors"]
+    },
+    {
+      "id": "1.4.1",
+      "chapter": "V1",
+      "chapter_name": "Encoding and Sanitization",
+      "description": "Verify that XML parsers are configured to disable external entity resolution to prevent XXE attacks.",
+      "level": 1,
+      "cwe": ["CWE-611"],
+      "keywords": ["XXE", "XML external entity", "DocumentBuilderFactory", "SAXParserFactory", "XMLReader", "XMLInputFactory", "etree.parse", "FEATURE_EXTERNAL_ENTITIES", "FEATURE_SECURE_PROCESSING"]
+    },
+    {
+      "id": "1.5.2",
+      "chapter": "V1",
+      "chapter_name": "Encoding and Sanitization",
+      "description": "Verify that the application does not use unsafe reflection or dynamic class loading with user-controlled input.",
+      "level": 1,
+      "cwe": ["CWE-470"],
+      "keywords": ["unsafe reflection", "Class.forName", "newInstance", "getMethod", "invoke", "getattr", "__import__", "importlib"]
+    },
+    {
+      "id": "2.2.1",
+      "chapter": "V2",
+      "chapter_name": "Validation and Business Logic",
+      "description": "Verify that regular expressions used for input validation are not vulnerable to catastrophic backtracking (ReDoS).",
+      "level": 2,
+      "cwe": ["CWE-1333"],
+      "keywords": ["ReDoS", "regex denial of service", "catastrophic backtracking", "re.compile", "Pattern.compile", "regex"]
+    },
+    {
+      "id": "5.3.1",
+      "chapter": "V5",
+      "chapter_name": "File Handling",
+      "description": "Verify that temporary files are created securely using unpredictable names and appropriate permissions.",
+      "level": 2,
+      "cwe": ["CWE-377"],
+      "keywords": ["temp file", "temporary file", "createTempFile", "tmpfile", "mktemp", "tempfile", "NamedTemporaryFile"]
+    },
+    {
+      "id": "10.1.1",
+      "chapter": "V10",
+      "chapter_name": "OAuth and OIDC",
+      "description": "Verify that OAuth/OIDC tokens are validated for audience, issuer, and expiration before granting access.",
+      "level": 1,
+      "cwe": ["CWE-345", "CWE-287"],
+      "keywords": ["OAuth", "OIDC", "token validation", "audience", "issuer", "jwt.decode", "verify_token", "id_token"]
+    },
+    {
+      "id": "8.2.1",
+      "chapter": "V8",
+      "chapter_name": "Authorization",
+      "description": "Verify that the application prevents privilege escalation by enforcing role checks at the service layer.",
+      "level": 1,
+      "cwe": ["CWE-269"],
+      "keywords": ["privilege escalation", "role change", "setRole", "isAdmin", "grant", "elevate", "addRole", "ROLE_ADMIN"]
+    },
+    {
+      "id": "13.2.1",
+      "chapter": "V13",
+      "chapter_name": "Configuration",
+      "description": "Verify that debug mode, verbose error output, and development-only features are disabled in production deployments.",
+      "level": 1,
+      "cwe": ["CWE-489"],
+      "keywords": ["debug mode", "DEBUG=True", "app.debug", "devtools", "stacktrace", "verbose error", "ShowStackTrace"]
+    },
+    {
+      "id": "14.1.2",
+      "chapter": "V14",
+      "chapter_name": "Data Protection",
+      "description": "Verify that personally identifiable information (PII) such as email addresses, phone numbers, and financial data is not written to application logs.",
+      "level": 1,
+      "cwe": ["CWE-532"],
+      "keywords": ["PII", "email log", "SSN", "credit card", "personal data", "log.info.*email", "log.info.*phone"]
+    },
+    {
+      "id": "15.1.1",
+      "chapter": "V15",
+      "chapter_name": "Business Logic",
+      "description": "Verify that the application is protected against time-of-check to time-of-use (TOCTOU) race conditions in security-critical operations.",
+      "level": 2,
+      "cwe": ["CWE-367"],
+      "keywords": ["TOCTOU", "race condition", "check-then-act", "exists.*open", "access.*open", "isFile.*delete", "synchronized"]
+    },
+    {
+      "id": "12.1.3",
+      "chapter": "V12",
+      "chapter_name": "Secure Communication",
+      "description": "Verify that the application implements certificate pinning where appropriate for high-security connections.",
+      "level": 2,
+      "cwe": ["CWE-295"],
+      "keywords": ["certificate pinning", "pin certificate", "TrustManager", "OkHttpCertificatePinner", "ssl_context", "verify_mode"]
+    },
+    {
+      "id": "6.4.1",
+      "chapter": "V6",
+      "chapter_name": "Authentication",
+      "description": "Verify that multi-factor authentication cannot be bypassed through alternative authentication paths or fallback mechanisms.",
+      "level": 2,
+      "cwe": ["CWE-308"],
+      "keywords": ["MFA bypass", "two-factor", "2FA", "TOTP", "skip_mfa", "mfa_required", "bypass_otp"]
+    }
+  ]
+}
