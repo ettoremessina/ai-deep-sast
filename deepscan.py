@@ -146,6 +146,10 @@ class Orchestrator:
             logger.info("Indexed %d functions in %d files",
                         index_stats.get("functions_found", 0),
                         index_stats.get("files_parsed", 0))
+            partial = index_stats.get("files_with_syntax_errors", 0)
+            if partial:
+                logger.warning("%d file(s) parsed only partially - some functions "
+                               "were not analysed", partial)
 
             if not self.index.is_queryable:
                 logger.warning("No functions found — nothing to scan")
@@ -382,6 +386,8 @@ class Orchestrator:
         idx = phases.get("index", {})
         logger.info("Files indexed: %d (%d functions)",
                      idx.get("files_parsed", 0), idx.get("functions_found", 0))
+        if idx.get("files_with_syntax_errors", 0):
+            logger.info("Files parsed partially: %d", idx["files_with_syntax_errors"])
 
         if phases.get("dry_run"):
             logger.info("Mode: DRY RUN (no LLM calls)")

@@ -49,8 +49,12 @@ _LANGUAGE_MAP: Dict[str, str] = {
     ".java": "java",
     ".js": "javascript",
     ".jsx": "javascript",
+    ".mjs": "javascript",
+    ".cjs": "javascript",
     ".ts": "typescript",
-    ".tsx": "typescript",
+    ".mts": "typescript",
+    ".cts": "typescript",
+    ".tsx": "tsx",
     ".go": "go",
     ".c": "c",
     ".h": "c",
@@ -76,8 +80,15 @@ _LANGUAGE_MAP: Dict[str, str] = {
 _FUNCTION_NODE_TYPES: Dict[str, Set[str]] = {
     "python": {"function_definition", "decorated_definition"},
     "java": {"method_declaration", "constructor_declaration"},
-    "javascript": {"function_declaration", "method_definition", "arrow_function"},
-    "typescript": {"function_declaration", "method_definition", "arrow_function"},
+    "javascript": {"function_declaration", "generator_function_declaration",
+                   "method_definition", "arrow_function", "function_expression",
+                   "function"},
+    "typescript": {"function_declaration", "generator_function_declaration",
+                   "method_definition", "arrow_function", "function_expression",
+                   "function"},
+    "tsx": {"function_declaration", "generator_function_declaration",
+            "method_definition", "arrow_function", "function_expression",
+            "function"},
     "go": {"function_declaration", "method_declaration"},
     "c": {"function_definition"},
     "cpp": {"function_definition"},
@@ -97,6 +108,7 @@ _CALL_NODE_TYPES: Dict[str, Set[str]] = {
     "java": {"method_invocation"},
     "javascript": {"call_expression"},
     "typescript": {"call_expression"},
+    "tsx": {"call_expression"},
     "go": {"call_expression"},
     "c": {"call_expression"},
     "cpp": {"call_expression"},
@@ -111,12 +123,55 @@ _CALL_NODE_TYPES: Dict[str, Set[str]] = {
 }
 
 
+# Languages whose pip module or loader function is not named after the language.
+# TSX needs its own grammar: the plain TypeScript one cannot parse JSX syntax.
+_GRAMMAR_SPECS: Dict[str, Tuple[str, str]] = {
+    "tsx": ("typescript", "language_tsx"),
+}
+
+
+# Function nodes that carry no name of their own: the name, if any, comes from
+# whatever binds them.  Dominant in modern JS/TS — `const Foo = () => {}`.
+_ANONYMOUS_FUNCTION_TYPES: Set[str] = {"arrow_function", "function_expression", "function"}
+
+# Binding node type -> field holding the name it gives to the function.
+_NAME_BINDING_FIELDS: Dict[str, str] = {
+    "variable_declarator": "name",        # const Foo = () => {}
+    "assignment_expression": "left",      # obj.handler = () => {}
+    "public_field_definition": "name",    # class C { handle = () => {} }
+    "field_definition": "name",
+    "pair": "key",                        # { onSave: () => {} }
+}
+
+# Nodes that may sit between a function and its binding without hiding it:
+# useCallback(fn), useMemo(fn), React.memo(fn), forwardRef(fn), (fn), fn as T.
+_TRANSPARENT_PARENT_TYPES: Set[str] = {
+    "arguments", "call_expression", "parenthesized_expression",
+    "await_expression", "as_expression", "satisfies_expression",
+    "type_assertion", "non_null_expression",
+}
+
+# Node types accepted as a derived function name (rejects array/object patterns,
+# so `const [a, setA] = useState(() => ...)` does not produce a bogus name).
+_NAME_NODE_TYPES: Set[str] = {
+    "identifier", "property_identifier", "shorthand_property_identifier",
+    "private_property_identifier",
+}
+
+# How many parents to walk while looking for a binding.
+_MAX_BINDING_DEPTH = 5
+
+
 def _load_language(lang_name: str) -> Optional[Language]:
     """Load a tree-sitter language by name."""
+    module_name, loader_name = _GRAMMAR_SPECS.get(lang_name, (lang_name, ""))
     try:
-        module = __import__(f"tree_sitter_{lang_name}")
-        # PHP uses language_php() instead of language()
-        loader = getattr(module, f"language_{lang_name}", None) or getattr(module, "language")
+        module = __import__(f"tree_sitter_{module_name}")
+        if loader_name:
+            loader = getattr(module, loader_name)
+        else:
+            # PHP uses language_php() instead of language()
+            loader = getattr(module, f"language_{lang_name}", None) or getattr(module, "language")
         return Language(loader())
     except (ImportError, AttributeError) as e:
         logger.debug("Language %s not available: %s", lang_name, e)
@@ -175,6 +230,13 @@ class TreeSitterParser:
     def __init__(self):
         self._parsers: Dict[str, Parser] = {}
         self._languages: Dict[str, Language] = {}
+        # Files tree-sitter could only parse partially (FR-028): without this the
+        # index silently under-reports, e.g. JSX parsed by a non-JSX grammar.
+        self.syntax_error_files: List[str] = []
+
+    def reset_diagnostics(self) -> None:
+        """Forget syntax errors recorded by earlier parse_file calls."""
+        self.syntax_error_files = []
 
     def _get_parser(self, lang_name: str) -> Optional[Parser]:
         """Get or create a parser for the given language."""
@@ -211,9 +273,33 @@ class TreeSitterParser:
                 return [], []
 
         tree = parser.parse(source)
+        if tree.root_node.has_error:
+            self._record_syntax_error(file_path, tree.root_node, lang_name)
         functions = self._extract_functions(tree.root_node, file_path, source, lang_name)
         calls = self._extract_calls(tree.root_node, file_path, source, lang_name, functions)
         return functions, calls
+
+    def _record_syntax_error(self, file_path: str, root_node, lang_name: str) -> None:
+        """Log a partial parse and remember the file (FR-028)."""
+        self.syntax_error_files.append(file_path)
+        first_error = self._first_error_node(root_node)
+        where = f" near line {first_error.start_point[0] + 1}" if first_error else ""
+        logger.warning("Partial parse of %s (%s grammar)%s - some functions may be missing",
+                       file_path, lang_name, where)
+
+    @staticmethod
+    def _first_error_node(root_node, max_nodes: int = 5000):
+        """Find the first error/missing node, bounded so huge trees stay cheap."""
+        stack = [root_node]
+        visited = 0
+        while stack and visited < max_nodes:
+            node = stack.pop()
+            visited += 1
+            if node.is_error or node.is_missing:
+                return node
+            if node.has_error:
+                stack.extend(reversed(node.children))
+        return None
 
     def _extract_functions(self, root_node, file_path: str, source: bytes,
                            lang_name: str) -> List[FunctionInfo]:
@@ -221,7 +307,7 @@ class TreeSitterParser:
         functions: List[FunctionInfo] = []
         func_types = _FUNCTION_NODE_TYPES.get(lang_name, set())
 
-        def visit(node, class_name=None):
+        def visit(node, class_name=None, enclosing_func=None):
             # Track class context
             current_class = class_name
             if node.type in ("class_definition", "class_declaration",
@@ -230,10 +316,13 @@ class TreeSitterParser:
                 if name_node:
                     current_class = source[name_node.start_byte:name_node.end_byte].decode("utf-8", errors="replace")
 
+            current_func = enclosing_func
             if node.type in func_types:
-                func_info = self._node_to_function(node, file_path, source, lang_name, current_class)
+                func_info = self._node_to_function(node, file_path, source, lang_name,
+                                                   current_class, enclosing_func)
                 if func_info:
                     functions.append(func_info)
+                    current_func = func_info.name
 
             # Handle Python decorated_definition: the function is inside it
             if node.type == "decorated_definition" and lang_name == "python":
@@ -245,19 +334,32 @@ class TreeSitterParser:
                 return  # Don't recurse into decorated_definition children again
 
             for child in node.children:
-                visit(child, current_class)
+                visit(child, current_class, current_func)
 
         visit(root_node)
         return functions
 
     def _node_to_function(self, node, file_path: str, source: bytes,
-                          lang_name: str, class_name: Optional[str]) -> Optional[FunctionInfo]:
+                          lang_name: str, class_name: Optional[str],
+                          enclosing_func: Optional[str] = None) -> Optional[FunctionInfo]:
         """Convert a tree-sitter node to FunctionInfo."""
         name_node = node.child_by_field_name("name")
-        if not name_node:
+        container = class_name
+
+        if name_node:
+            name = source[name_node.start_byte:name_node.end_byte].decode("utf-8", errors="replace")
+        elif node.type in _ANONYMOUS_FUNCTION_TYPES:
+            name = self._derive_bound_name(node, source)
+            if not name:
+                # Inline callback (onClick={() => ...}, arr.map(x => ...)): it is
+                # already part of its parent's body, so indexing it adds only noise.
+                return None
+            # Qualify by whatever contains it, so two components in one file can
+            # both declare handleSubmit without colliding on the index key.
+            container = class_name or enclosing_func
+        else:
             return None
 
-        name = source[name_node.start_byte:name_node.end_byte].decode("utf-8", errors="replace")
         body = source[node.start_byte:node.end_byte].decode("utf-8", errors="replace")
         start_line = node.start_point[0] + 1
         end_line = node.end_point[0] + 1
@@ -269,8 +371,40 @@ class TreeSitterParser:
             end_line=end_line,
             body=body,
             language=lang_name,
-            class_name=class_name,
+            class_name=container,
         )
+
+    @staticmethod
+    def _derive_bound_name(node, source: bytes) -> Optional[str]:
+        """
+        Name an anonymous function from what binds it.
+
+        Handles the shapes React code is written in: `const Foo = () => {}`,
+        `const handle = useCallback(() => {}, [])`, `export default memo(() => {})`,
+        `obj.onSave = function () {}`.  Returns None when nothing binds it.
+        """
+        parent = node.parent
+        for _ in range(_MAX_BINDING_DEPTH):
+            if parent is None:
+                return None
+
+            field = _NAME_BINDING_FIELDS.get(parent.type)
+            if field:
+                target = parent.child_by_field_name(field)
+                if target is None:
+                    return None
+                text = source[target.start_byte:target.end_byte].decode("utf-8", errors="replace")
+                if target.type in _NAME_NODE_TYPES:
+                    return text
+                if target.type == "member_expression":
+                    return text.rsplit(".", 1)[-1]
+                return None  # destructuring pattern, computed key, ...
+
+            if parent.type not in _TRANSPARENT_PARENT_TYPES:
+                return None
+            parent = parent.parent
+
+        return None
 
     def _extract_calls(self, root_node, file_path: str, source: bytes,
                        lang_name: str, functions: List[FunctionInfo]) -> List[Tuple[str, str]]:
@@ -366,7 +500,8 @@ class CodeIndex:
         Degrades gracefully on unparseable files (FR-028).
         """
         stats = {"files_parsed": 0, "files_skipped": 0, "functions_found": 0,
-                 "calls_found": 0, "errors": 0}
+                 "calls_found": 0, "errors": 0, "files_with_syntax_errors": 0}
+        self._parser.reset_diagnostics()
 
         if os.path.isfile(target_path):
             files = [target_path]
@@ -408,6 +543,11 @@ class CodeIndex:
             except Exception as e:
                 logger.warning("Failed to parse %s: %s", file_path, e)
                 stats["errors"] += 1
+
+        stats["files_with_syntax_errors"] = len(self._parser.syntax_error_files)
+        if stats["files_with_syntax_errors"]:
+            logger.warning("%d file(s) parsed only partially - coverage is incomplete",
+                           stats["files_with_syntax_errors"])
 
         self._queryable = stats["functions_found"] > 0 or len(self._functions) > 0
         logger.info("Index built: %d files, %d functions, %d calls",

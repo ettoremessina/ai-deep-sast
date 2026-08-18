@@ -140,6 +140,25 @@ Custom rules currently cover:
 `p/default` provides broad language coverage for all Semgrep-supported languages (~30+).
 Custom rules can be extended for additional languages as needed.
 
+### Deep Scan Language Coverage
+
+The deep scan builds a tree-sitter index before handing functions to the LLM, so its coverage
+depends on what the index can extract:
+
+| Construct | Indexed | Notes |
+|---|---|---|
+| Named functions and methods | Yes | All languages in `_LANGUAGE_MAP` |
+| `.jsx` / `.tsx` (JSX syntax) | Yes | `.tsx` uses the dedicated TSX grammar |
+| Bound arrow functions / function expressions | Yes | `const Foo = () => {}`, `const h = useCallback(() => {}, [])`, `memo(() => {})`, `obj.h = function () {}` — named after their binding and qualified by the enclosing function or class |
+| Anonymous inline callbacks | No | `onClick={() => ...}`, `arr.map(x => ...)`, `useEffect(() => ...)` — analysed as part of the enclosing function's body |
+| Partially parseable files | Partially | Counted in `files_with_syntax_errors` and logged as a warning; functions after the syntax error may be missing |
+
+Rule guidance for JS/TS (`rule_matcher.py`) is currently oriented towards server-side Node
+patterns (`req.body`, `child_process`, `fs.*`). React-specific client-side patterns
+(token storage in `localStorage`, `postMessage` without origin checks, `target="_blank"`
+without `noopener`, prototype pollution) are not yet mapped to ASVS/CodeGuard rules and rely
+on `p/default` plus the LLM's own judgement.
+
 ## Extending Detection
 
 ### Adding a new custom rule

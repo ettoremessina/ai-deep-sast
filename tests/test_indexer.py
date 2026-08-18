@@ -88,6 +88,72 @@ function sanitize(input) {
 '''
 
 
+REACT_JSX_SAMPLE = '''import React, { useState, useCallback } from 'react';
+
+const Profile = ({ user }) => {
+    const [bio, setBio] = useState(user.bio);
+
+    const handleSave = useCallback(async () => {
+        const token = "sk_live_hardcoded_secret_123456";
+        await fetch(`/api/users/${user.id}`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+        });
+    }, [bio, user.id]);
+
+    return (
+        <div>
+            <div dangerouslySetInnerHTML={{ __html: bio }} />
+            <button onClick={() => handleSave()}>Save</button>
+        </div>
+    );
+};
+
+function renderRaw(html) {
+    document.getElementById('x').innerHTML = html;
+}
+
+export default Profile;
+'''
+
+REACT_TSX_SAMPLE = '''import React from 'react';
+
+interface Props { html: string; }
+
+export function Widget({ html }: Props) {
+    const apiKey: string = "AKIAIOSFODNN7EXAMPLE";
+    function doThing(v: string) {
+        document.getElementById('t')!.innerHTML = v + apiKey;
+    }
+    return <div onClick={() => doThing(html)}>{html}</div>;
+}
+
+export class Old extends React.Component<Props> {
+    unsafeRun() { eval(this.props.html); }
+    render() { return <span/>; }
+}
+'''
+
+BROKEN_TS_SAMPLE = '''export function halfWritten(a: string) {
+    return a.
+'''
+
+TWO_COMPONENTS_SAMPLE = '''\
+const A = () => {
+    const onSubmit = () => { fetch('/a'); };
+    return null;
+};
+const B = () => {
+    const onSubmit = () => { fetch('/b'); };
+    return null;
+};
+'''
+
+MJS_SAMPLE = 'export function fromMjs() { return 1; }\n'
+
+MTS_SAMPLE = 'export function fromMts(): number { return 1; }\n'
+
+
 @pytest.fixture
 def python_file(tmp_path):
     f = tmp_path / "app.py"
@@ -106,6 +172,20 @@ def java_file(tmp_path):
 def js_file(tmp_path):
     f = tmp_path / "utils.js"
     f.write_text(JS_SAMPLE)
+    return str(f)
+
+
+@pytest.fixture
+def jsx_file(tmp_path):
+    f = tmp_path / "Profile.jsx"
+    f.write_text(REACT_JSX_SAMPLE)
+    return str(f)
+
+
+@pytest.fixture
+def tsx_file(tmp_path):
+    f = tmp_path / "Widget.tsx"
+    f.write_text(REACT_TSX_SAMPLE)
     return str(f)
 
 
@@ -252,6 +332,103 @@ class TestIndexBuild:
         f.write_bytes(b"\x80\x81\x82 invalid utf-8 mixed with def foo(): pass")
         stats = index.build(str(tmp_path))
         assert stats["errors"] == 0  # tree-sitter handles bad input gracefully
+
+
+# --- React / JSX / TSX coverage ---
+
+class TestReactParsing:
+    """Tests for JSX/TSX parsing and named-arrow-function extraction."""
+
+    def test_tsx_uses_jsx_grammar(self, tsx_file):
+        """A .tsx file must parse without syntax errors (needs the TSX grammar)."""
+        parser = TreeSitterParser()
+        parser.parse_file(tsx_file)
+        assert parser.syntax_error_files == []
+
+    def test_tsx_function_component_found(self, tsx_file):
+        parser = TreeSitterParser()
+        functions, _ = parser.parse_file(tsx_file)
+        names = {f.name for f in functions}
+        assert "Widget" in names
+        assert "doThing" in names
+
+    def test_tsx_class_component_methods_found(self, tsx_file):
+        parser = TreeSitterParser()
+        functions, _ = parser.parse_file(tsx_file)
+        by_qname = {f.qualified_name for f in functions}
+        assert "Old.unsafeRun" in by_qname
+        assert "Old.render" in by_qname
+
+    def test_arrow_component_indexed(self, jsx_file):
+        """const Foo = () => {} must be indexed under the name Foo."""
+        parser = TreeSitterParser()
+        functions, _ = parser.parse_file(jsx_file)
+        names = {f.name for f in functions}
+        assert "Profile" in names
+        assert "renderRaw" in names
+
+    def test_arrow_component_body_complete(self, jsx_file):
+        parser = TreeSitterParser()
+        functions, _ = parser.parse_file(jsx_file)
+        profile = next(f for f in functions if f.name == "Profile")
+        assert "dangerouslySetInnerHTML" in profile.body
+        assert "sk_live_hardcoded_secret" in profile.body
+
+    def test_arrow_wrapped_in_hook_indexed(self, jsx_file):
+        """useCallback(() => {}) must be indexed under the variable name."""
+        parser = TreeSitterParser()
+        functions, _ = parser.parse_file(jsx_file)
+        names = {f.name for f in functions}
+        assert "handleSave" in names
+
+    def test_derived_name_qualified_by_enclosing_function(self, jsx_file):
+        """Nested arrows are qualified so two same-named handlers cannot collide."""
+        parser = TreeSitterParser()
+        functions, _ = parser.parse_file(jsx_file)
+        handle = next(f for f in functions if f.name == "handleSave")
+        assert handle.qualified_name == "Profile.handleSave"
+
+    def test_anonymous_inline_callbacks_not_indexed(self, jsx_file):
+        """onClick={() => ...} has no derivable name and must be skipped."""
+        parser = TreeSitterParser()
+        functions, _ = parser.parse_file(jsx_file)
+        assert all(f.name for f in functions)
+        assert not any("anonymous" in f.name for f in functions)
+        # Profile, handleSave, renderRaw — no inline-callback noise
+        assert len(functions) == 3
+
+    def test_same_name_handlers_in_two_components_do_not_collide(self, tmp_path):
+        src = TWO_COMPONENTS_SAMPLE
+        f = tmp_path / "Forms.jsx"
+        f.write_text(src)
+        index = CodeIndex()
+        index.build(str(f))
+        matches = index.find_symbol("onSubmit")
+        assert len(matches) == 2
+        quals = {m["qualified_name"] for m in matches}
+        assert quals == {"A.onSubmit", "B.onSubmit"}
+
+    def test_jsx_indexed_via_build(self, index, jsx_file):
+        stats = index.build(jsx_file)
+        assert stats["files_parsed"] == 1
+        assert stats["functions_found"] == 3
+        assert stats["files_with_syntax_errors"] == 0
+
+    def test_syntax_errors_are_reported(self, index, tmp_path):
+        f = tmp_path / "broken.ts"
+        f.write_text(BROKEN_TS_SAMPLE)
+        stats = index.build(str(f))
+        assert stats["files_with_syntax_errors"] == 1
+        assert stats["errors"] == 0
+
+    def test_mjs_and_mts_extensions_indexed(self, tmp_path):
+        (tmp_path / "a.mjs").write_text(MJS_SAMPLE)
+        (tmp_path / "b.mts").write_text(MTS_SAMPLE)
+        index = CodeIndex()
+        stats = index.build(str(tmp_path))
+        assert stats["files_parsed"] == 2
+        names = {f["name"] for f in index.get_all_functions()}
+        assert {"fromMjs", "fromMts"} <= names
 
 
 # --- Query interface (FR-022) ---
