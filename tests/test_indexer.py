@@ -202,6 +202,72 @@ CSHARP_CLASS_ONLY_SAMPLE = '''namespace App.Models
 '''
 
 
+PYTHON_TRIVIAL_BODY_SAMPLE = '''
+def placeholder():
+    pass
+
+def ellipsis_body():
+    ...
+'''
+
+JS_EXPRESSION_ARROW_SAMPLE = '''
+const double = (x) => x * 2;
+'''
+
+CSHARP_BODYLESS_SAMPLE = '''namespace App.Services
+{
+    public interface IMasterDataService
+    {
+        Task<int> CountAsync();
+        Task DeleteAsync(int id);
+    }
+
+    public abstract class ServiceBase
+    {
+        protected abstract Task ExecuteAsync();
+
+        protected void Log(string message)
+        {
+            Console.WriteLine(message);
+        }
+    }
+
+    public partial class MasterDataService : ServiceBase
+    {
+        partial void OnConfiguring();
+
+        public MasterDataService()
+        {
+            Setup();
+        }
+
+        public int Count => _items.Count;
+
+        protected override async Task ExecuteAsync()
+        {
+            await DoWorkAsync();
+        }
+    }
+}
+'''
+
+JAVA_BODYLESS_SAMPLE = '''package com.example;
+
+public interface Repository {
+    User findById(String id);
+    void save(User user);
+}
+
+abstract class RepositoryBase implements Repository {
+    public abstract void flush();
+
+    public void clear() {
+        cache.clear();
+    }
+}
+'''
+
+
 @pytest.fixture
 def python_file(tmp_path):
     f = tmp_path / "app.py"
@@ -545,6 +611,69 @@ class TestCSharpTopLevel:
         assert stats["functions_found"] == 1
         assert stats["files_with_syntax_errors"] == 0
         assert [m["name"] for m in index.find_symbol("<top-level>")] == ["<top-level>"]
+
+
+# --- Declarations with no body ---
+
+class TestBodylessDeclarations:
+    """
+    Interface, abstract and partial declarations are signatures with no
+    implementation: sending them to the LLM costs a call and can find nothing.
+    """
+
+    def _names(self, tmp_path, name, source):
+        f = tmp_path / name
+        f.write_text(source)
+        functions, _ = TreeSitterParser().parse_file(str(f))
+        return {fn.qualified_name for fn in functions}
+
+    def test_csharp_interface_methods_skipped(self, tmp_path):
+        names = self._names(tmp_path, "IMasterDataService.cs", CSHARP_BODYLESS_SAMPLE)
+        assert "IMasterDataService.CountAsync" not in names
+        assert "IMasterDataService.DeleteAsync" not in names
+
+    def test_csharp_abstract_method_skipped(self, tmp_path):
+        names = self._names(tmp_path, "ServiceBase.cs", CSHARP_BODYLESS_SAMPLE)
+        assert "ServiceBase.ExecuteAsync" not in names
+
+    def test_csharp_partial_declaration_skipped(self, tmp_path):
+        names = self._names(tmp_path, "MasterDataService.cs", CSHARP_BODYLESS_SAMPLE)
+        assert "MasterDataService.OnConfiguring" not in names
+
+    def test_csharp_implementations_still_indexed(self, tmp_path):
+        names = self._names(tmp_path, "MasterDataService.cs", CSHARP_BODYLESS_SAMPLE)
+        assert "ServiceBase.Log" in names
+        assert "MasterDataService.MasterDataService" in names
+        assert "MasterDataService.ExecuteAsync" in names
+
+    def test_java_interface_methods_skipped(self, tmp_path):
+        names = self._names(tmp_path, "Repository.java", JAVA_BODYLESS_SAMPLE)
+        assert "Repository.findById" not in names
+        assert "Repository.save" not in names
+        assert "RepositoryBase.flush" not in names
+        assert "RepositoryBase.clear" in names
+
+    def test_python_trivial_bodies_still_indexed(self, tmp_path):
+        f = tmp_path / "stub.py"
+        f.write_text(PYTHON_TRIVIAL_BODY_SAMPLE)
+        functions, _ = TreeSitterParser().parse_file(str(f))
+        assert {fn.name for fn in functions} == {"placeholder", "ellipsis_body"}
+
+    def test_js_expression_arrow_still_indexed(self, tmp_path):
+        f = tmp_path / "util.js"
+        f.write_text(JS_EXPRESSION_ARROW_SAMPLE)
+        functions, _ = TreeSitterParser().parse_file(str(f))
+        assert {fn.name for fn in functions} == {"double"}
+
+    def test_bodyless_declarations_not_counted_as_functions(self, tmp_path):
+        f = tmp_path / "IMasterDataService.cs"
+        f.write_text(CSHARP_BODYLESS_SAMPLE)
+        index = CodeIndex()
+        stats = index.build(str(f))
+        # Only Log, the constructor and the ExecuteAsync override remain
+        # (C# properties are not indexed at all).
+        assert stats["functions_found"] == 3
+        assert stats["files_with_syntax_errors"] == 0
 
 
 # --- Query interface (FR-022) ---

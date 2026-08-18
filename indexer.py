@@ -123,6 +123,14 @@ _CALL_NODE_TYPES: Dict[str, Set[str]] = {
 }
 
 
+# Languages where a declaration may carry no body at all: interface members,
+# abstract and partial declarations, extern methods.  Such a declaration is a
+# signature with nothing to analyse, so indexing it only spends an LLM call.
+# Add a language here only after checking that its grammar exposes the body
+# under the "body" field, otherwise every function in it would be skipped.
+_BODYLESS_DECLARATION_LANGUAGES: Set[str] = {"c_sharp", "java"}
+
+
 # Statements that sit directly under the file root instead of inside a function.
 # C# top-level statements (.NET 6+) compile into an implicit Main, and that is
 # where modern ASP.NET wires up authentication, CORS and endpoints - code that
@@ -388,6 +396,10 @@ class TreeSitterParser:
                           lang_name: str, class_name: Optional[str],
                           enclosing_func: Optional[str] = None) -> Optional[FunctionInfo]:
         """Convert a tree-sitter node to FunctionInfo."""
+        if (lang_name in _BODYLESS_DECLARATION_LANGUAGES
+                and node.child_by_field_name("body") is None):
+            return None
+
         name_node = node.child_by_field_name("name")
         container = class_name
 
