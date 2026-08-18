@@ -150,6 +150,8 @@ depends on what the index can extract:
 | Named functions and methods | Yes | All languages in `_LANGUAGE_MAP` |
 | `.jsx` / `.tsx` (JSX syntax) | Yes | `.tsx` uses the dedicated TSX grammar |
 | Bound arrow functions / function expressions | Yes | `const Foo = () => {}`, `const h = useCallback(() => {}, [])`, `memo(() => {})`, `obj.h = function () {}` — named after their binding and qualified by the enclosing function or class |
+| C# top-level statements | Yes | `.NET 6+` `Program.cs` with no `Main`: indexed as one synthetic `<top-level>` function, which is where ASP.NET wires up authentication, CORS and endpoints. Files with an explicit `Main` are unaffected |
+| Module-level code in other languages | No | Python/JS statements outside any function are not indexed; extend `_TOP_LEVEL_STATEMENT_TYPES` in `indexer.py` to cover them |
 | Anonymous inline callbacks | No | `onClick={() => ...}`, `arr.map(x => ...)`, `useEffect(() => ...)` — analysed as part of the enclosing function's body |
 | Partially parseable files | Partially | Counted in `files_with_syntax_errors` and logged as a warning; functions after the syntax error may be missing |
 

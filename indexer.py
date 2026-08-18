@@ -123,6 +123,18 @@ _CALL_NODE_TYPES: Dict[str, Set[str]] = {
 }
 
 
+# Statements that sit directly under the file root instead of inside a function.
+# C# top-level statements (.NET 6+) compile into an implicit Main, and that is
+# where modern ASP.NET wires up authentication, CORS and endpoints - code that
+# would otherwise belong to no function and never be analysed.
+_TOP_LEVEL_STATEMENT_TYPES: Dict[str, Set[str]] = {
+    "c_sharp": {"global_statement"},
+}
+
+# Name given to the synthetic function built from a file's top-level statements.
+_TOP_LEVEL_NAME = "<top-level>"
+
+
 # Languages whose pip module or loader function is not named after the language.
 # TSX needs its own grammar: the plain TypeScript one cannot parse JSX syntax.
 _GRAMMAR_SPECS: Dict[str, Tuple[str, str]] = {
@@ -337,7 +349,40 @@ class TreeSitterParser:
                 visit(child, current_class, current_func)
 
         visit(root_node)
+
+        top_level = self._top_level_function(root_node, file_path, source, lang_name)
+        if top_level:
+            functions.append(top_level)
+
         return functions
+
+    @staticmethod
+    def _top_level_function(root_node, file_path: str, source: bytes,
+                            lang_name: str) -> Optional[FunctionInfo]:
+        """
+        Build one synthetic function from a file's top-level statements.
+
+        Returns None for languages without them, and for files that declare a
+        real entry point instead, so nothing is indexed twice.
+        """
+        statement_types = _TOP_LEVEL_STATEMENT_TYPES.get(lang_name)
+        if not statement_types:
+            return None
+
+        statements = [c for c in root_node.children if c.type in statement_types]
+        if not statements:
+            return None
+
+        first, last = statements[0], statements[-1]
+        return FunctionInfo(
+            name=_TOP_LEVEL_NAME,
+            file_path=file_path,
+            start_line=first.start_point[0] + 1,
+            end_line=last.end_point[0] + 1,
+            body=source[first.start_byte:last.end_byte].decode("utf-8", errors="replace"),
+            language=lang_name,
+            class_name=None,
+        )
 
     def _node_to_function(self, node, file_path: str, source: bytes,
                           lang_name: str, class_name: Optional[str],

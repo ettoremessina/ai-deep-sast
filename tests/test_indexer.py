@@ -154,6 +154,54 @@ MJS_SAMPLE = 'export function fromMjs() { return 1; }\n'
 MTS_SAMPLE = 'export function fromMts(): number { return 1; }\n'
 
 
+CSHARP_TOP_LEVEL_SAMPLE = '''using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddCors(policy =>
+{
+    policy.AddDefaultPolicy(p => p.AllowAnyOrigin().AllowAnyHeader());
+});
+
+builder.Services.AddAuthentication("Bearer").AddJwtBearer();
+
+var app = builder.Build();
+app.UseHttpsRedirection();
+app.UseAuthentication();
+app.MapControllers();
+app.Run();
+'''
+
+CSHARP_EXPLICIT_MAIN_SAMPLE = '''using System;
+
+namespace App
+{
+    internal class Program
+    {
+        private static void Main(string[] args)
+        {
+            Configure();
+        }
+
+        private static void Configure()
+        {
+            Console.WriteLine("configured");
+        }
+    }
+}
+'''
+
+CSHARP_CLASS_ONLY_SAMPLE = '''namespace App.Models
+{
+    public class User
+    {
+        public string Name { get; set; }
+    }
+}
+'''
+
+
 @pytest.fixture
 def python_file(tmp_path):
     f = tmp_path / "app.py"
@@ -429,6 +477,74 @@ class TestReactParsing:
         assert stats["files_parsed"] == 2
         names = {f["name"] for f in index.get_all_functions()}
         assert {"fromMjs", "fromMts"} <= names
+
+
+# --- C# top-level statements ---
+
+class TestCSharpTopLevel:
+    """
+    C# top-level statements (.NET 6+) belong to no method declaration, yet that
+    is where modern ASP.NET wires up authentication, CORS and endpoints.
+    """
+
+    def _parse(self, tmp_path, name, source):
+        f = tmp_path / name
+        f.write_text(source)
+        return TreeSitterParser().parse_file(str(f))
+
+    def test_top_level_statements_indexed(self, tmp_path):
+        functions, _ = self._parse(tmp_path, "Program.cs", CSHARP_TOP_LEVEL_SAMPLE)
+        names = [f.name for f in functions]
+        assert names.count("<top-level>") == 1
+
+    def test_top_level_body_covers_the_configuration(self, tmp_path):
+        functions, _ = self._parse(tmp_path, "Program.cs", CSHARP_TOP_LEVEL_SAMPLE)
+        top = next(f for f in functions if f.name == "<top-level>")
+        assert "AllowAnyOrigin" in top.body
+        assert "AddJwtBearer" in top.body
+        assert "app.Run()" in top.body
+        # The using directives above the first statement are not part of it.
+        assert "using Microsoft" not in top.body
+
+    def test_top_level_spans_first_to_last_statement(self, tmp_path):
+        functions, _ = self._parse(tmp_path, "Program.cs", CSHARP_TOP_LEVEL_SAMPLE)
+        top = next(f for f in functions if f.name == "<top-level>")
+        lines = CSHARP_TOP_LEVEL_SAMPLE.splitlines()
+        assert lines[top.start_line - 1].startswith("var builder")
+        assert lines[top.end_line - 1].startswith("app.Run()")
+
+    def test_calls_attributed_to_top_level(self, tmp_path):
+        functions, calls = self._parse(tmp_path, "Program.cs", CSHARP_TOP_LEVEL_SAMPLE)
+        top = next(f for f in functions if f.name == "<top-level>")
+        callees = {callee for caller, callee in calls if caller == top.key}
+        # C# callee names keep their receiver chain (pre-existing behaviour of
+        # _extract_callee_name for member_access_expression), unlike Java/Python.
+        assert "builder.Services.AddCors" in callees
+        assert "app.UseAuthentication" in callees
+
+    def test_explicit_main_produces_no_top_level(self, tmp_path):
+        functions, _ = self._parse(tmp_path, "Program.cs", CSHARP_EXPLICIT_MAIN_SAMPLE)
+        names = {f.name for f in functions}
+        assert "Main" in names
+        assert "Configure" in names
+        assert "<top-level>" not in names
+
+    def test_class_only_file_produces_no_top_level(self, tmp_path):
+        functions, _ = self._parse(tmp_path, "User.cs", CSHARP_CLASS_ONLY_SAMPLE)
+        assert "<top-level>" not in {f.name for f in functions}
+
+    def test_python_module_level_code_unaffected(self, tmp_path):
+        functions, _ = self._parse(tmp_path, "app.py", PYTHON_SAMPLE)
+        assert "<top-level>" not in {f.name for f in functions}
+
+    def test_top_level_reaches_the_index(self, tmp_path):
+        f = tmp_path / "Program.cs"
+        f.write_text(CSHARP_TOP_LEVEL_SAMPLE)
+        index = CodeIndex()
+        stats = index.build(str(f))
+        assert stats["functions_found"] == 1
+        assert stats["files_with_syntax_errors"] == 0
+        assert [m["name"] for m in index.find_symbol("<top-level>")] == ["<top-level>"]
 
 
 # --- Query interface (FR-022) ---
