@@ -198,7 +198,9 @@ class Orchestrator:
             report_path = self.reporter.generate_report(
                 show_needs_review=self.show_needs_review
             )
-            json_path = self.reporter.generate_json_report()
+            json_path = self.reporter.generate_json_report(
+                show_needs_review=self.show_needs_review
+            )
             results["phases"]["reports"] = {
                 "markdown": report_path,
                 "json": json_path,

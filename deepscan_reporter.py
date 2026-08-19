@@ -74,15 +74,26 @@ class DeepScanReporter:
         logger.info("Deep scan report written to %s", report_path)
         return report_path
 
-    def generate_json_report(self) -> str:
-        """Generate a machine-readable JSON report of published findings."""
-        published = self.store.get_findings(state=FindingState.PUBLISHED)
+    def generate_json_report(self, show_needs_review: bool = False) -> str:
+        """
+        Generate a machine-readable JSON report of published findings.
+
+        With show_needs_review, findings the triager could not decide are included
+        too. Downstream tools import this file, not the Markdown, so leaving them
+        out hides every uncertain finding from wherever the results are consumed.
+        They keep their "needs-review" verdict, so importers can flag rather than
+        silently mix them with confirmed findings. False positives stay out: those
+        are a decision, not uncertainty.
+        """
+        findings = self.store.get_findings(state=FindingState.PUBLISHED)
+        if show_needs_review:
+            findings = findings + self.store.get_findings(verdict=Verdict.NEEDS_REVIEW)
         summary = self.store.export_summary()
 
         data = {
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "summary": summary,
-            "findings": published,
+            "findings": findings,
         }
 
         report_path = os.path.join(self.output_dir, "deepscan_report.json")

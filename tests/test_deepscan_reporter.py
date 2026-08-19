@@ -164,6 +164,51 @@ class TestJsonReport:
             data = json.load(f)
         assert data["findings"] == []
 
+    def test_needs_review_excluded_by_default(self, reporter, store):
+        _add_published_finding(store, "sqli")
+        fid = store.add_finding("a.py", "maybe-vuln", "test")
+        store.set_verdict(fid, Verdict.NEEDS_REVIEW)
+
+        path = reporter.generate_json_report()
+        with open(path) as f:
+            data = json.load(f)
+        assert [f["vulnerability_class"] for f in data["findings"]] == ["sqli"]
+
+    def test_needs_review_included_when_enabled(self, reporter, store):
+        """Downstream tools (DefectDojo) only see what lands in the JSON."""
+        _add_published_finding(store, "sqli")
+        fid = store.add_finding("a.py", "maybe-vuln", "test")
+        store.set_verdict(fid, Verdict.NEEDS_REVIEW)
+
+        path = reporter.generate_json_report(show_needs_review=True)
+        with open(path) as f:
+            data = json.load(f)
+        classes = {f["vulnerability_class"] for f in data["findings"]}
+        assert classes == {"sqli", "maybe-vuln"}
+
+    def test_included_needs_review_stays_distinguishable(self, reporter, store):
+        """The verdict must survive, or the converter cannot flag them apart."""
+        _add_published_finding(store, "sqli")
+        fid = store.add_finding("a.py", "maybe-vuln", "test")
+        store.set_verdict(fid, Verdict.NEEDS_REVIEW)
+
+        path = reporter.generate_json_report(show_needs_review=True)
+        with open(path) as f:
+            data = json.load(f)
+        by_class = {f["vulnerability_class"]: f for f in data["findings"]}
+        assert by_class["sqli"]["verdict"] == "true-positive"
+        assert by_class["maybe-vuln"]["verdict"] == "needs-review"
+
+    def test_false_positives_never_included(self, reporter, store):
+        """needs-review is uncertainty; false-positive is a decision. Keep it out."""
+        fid = store.add_finding("a.py", "not-a-vuln", "test")
+        store.set_verdict(fid, Verdict.FALSE_POSITIVE)
+
+        path = reporter.generate_json_report(show_needs_review=True)
+        with open(path) as f:
+            data = json.load(f)
+        assert data["findings"] == []
+
 
 class TestPermalinks:
     """Tests for commit-pinned permalink construction."""
