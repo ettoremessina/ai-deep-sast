@@ -227,7 +227,10 @@ class FunctionInfo:
 
     @property
     def key(self) -> str:
-        return f"{self.file_path}:{self.qualified_name}"
+        # start_line disambiguates same-named functions in one file: React files
+        # routinely define many callbacks called renderCell, and without it each
+        # overwrites the previous one in the index dict.
+        return f"{self.file_path}:{self.qualified_name}:{self.start_line}"
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -594,7 +597,9 @@ class CodeIndex:
 
                 self._file_hashes[file_path] = content_hash
                 stats["files_parsed"] += 1
-                stats["functions_found"] += len(functions)
+                # Count what is retrievable, not what was parsed: anything the
+                # key collapses would otherwise be reported as analysed.
+                stats["functions_found"] += len({func.key for func in functions})
                 stats["calls_found"] += len(calls)
 
             except Exception as e:
@@ -668,14 +673,10 @@ class CodeIndex:
 
     def get_function_body(self, file_path: str, function_name: str) -> Optional[str]:
         """Get the body of a specific function."""
-        key = f"{file_path}:{function_name}"
-        func = self._functions.get(key)
-        if func:
-            return func.body
-        # Try qualified name lookup
-        for k, f in self._functions.items():
-            if k.endswith(f":{function_name}") and f.file_path == file_path:
-                return f.body
+        for key in self._by_file.get(file_path, []):
+            func = self._functions.get(key)
+            if func and function_name in (func.name, func.qualified_name):
+                return func.body
         return None
 
     def get_callers(self, function_name: str) -> List[Dict[str, Any]]:
@@ -690,14 +691,11 @@ class CodeIndex:
 
     def get_callees(self, file_path: str, function_name: str) -> List[str]:
         """Get all functions called by the given function (FR-021)."""
-        key = f"{file_path}:{function_name}"
-        callees = self._callees.get(key, set())
-        if not callees:
-            for k in self._functions:
-                if k.endswith(f":{function_name}") and self._functions[k].file_path == file_path:
-                    callees = self._callees.get(k, set())
-                    break
-        return sorted(callees)
+        for key in self._by_file.get(file_path, []):
+            func = self._functions.get(key)
+            if func and function_name in (func.name, func.qualified_name):
+                return sorted(self._callees.get(key, set()))
+        return []
 
     def find_symbol(self, name: str) -> List[Dict[str, Any]]:
         """Find all functions/methods with the given name (FR-022)."""

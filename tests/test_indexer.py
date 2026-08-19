@@ -796,7 +796,7 @@ class TestFunctionInfo:
 
     def test_key(self):
         f = FunctionInfo("login", "app.py", 1, 5, "body", "python", "Auth")
-        assert f.key == "app.py:Auth.login"
+        assert f.key == "app.py:Auth.login:1"
 
     def test_to_dict(self):
         f = FunctionInfo("main", "app.py", 1, 5, "def main(): pass", "python")
@@ -806,3 +806,25 @@ class TestFunctionInfo:
         assert d["start_line"] == 1
         assert d["end_line"] == 5
         assert d["language"] == "python"
+
+
+def test_same_named_functions_in_one_file_all_indexed(tmp_path):
+    """Two callbacks with the same name must not overwrite each other."""
+    f = tmp_path / "grid.tsx"
+    f.write_text(
+        "export const getColumns = () => [\n"
+        "  { renderCell: (p) => <span>{p.a}</span> },\n"
+        "  { renderCell: (p) => <span>{p.b}</span> },\n"
+        "];\n"
+    )
+    idx = CodeIndex()
+    stats = idx.build(str(f))
+    names = [fn["name"] for fn in idx.get_all_functions()]
+    assert names.count("renderCell") == 2
+    assert stats["functions_found"] == len(idx.get_all_functions())
+
+
+def test_key_includes_start_line():
+    a = FunctionInfo("f", "a.ts", 1, 2, "body", "typescript")
+    b = FunctionInfo("f", "a.ts", 10, 11, "body", "typescript")
+    assert a.key != b.key
