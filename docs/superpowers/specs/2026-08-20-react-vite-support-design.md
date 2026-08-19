@@ -65,11 +65,23 @@ are 1–3 lines — `map`/`filter` predicates and
 MUI render callbacks such as `x => x.compSubTypeAttValId` — carrying no security
 signal but consuming a full LLM call each.
 
-**5. Two reporting defects.** A partial-parse warning fires on HTML entities
-(`&sup2;`) inside JSX, declaring "coverage is incomplete" while in fact every
-function in the file is indexed — verified on `src/utils/uiUtils.tsx`, all 6 of 6
-found. Separately, the index reports `functions_found=1839` while
-`get_all_functions()` returns 1531; the 308-function gap is unexplained.
+**5. The index silently drops functions.** `FunctionInfo.key` is
+`f"{file_path}:{qualified_name}"` with no line number
+([indexer.py:229](../../../indexer.py)), and `build()` stores functions in a dict
+keyed by it ([indexer.py:586](../../../indexer.py)). Same-named functions in one
+file overwrite each other. `functions_found` counts before this collapse, which
+is why it reports 1839 while only 1531 are retrievable.
+
+On Chrono_Web **308 functions (17%) are lost**. The worst case,
+`src/pages/ComponentSearch.tsx`, parses 64 functions and indexes 32 — half the
+file — because `getColumns.renderCell` and `getColumns.renderHeader` each occur
+16 times. This is not React-specific: the C# scan indexed 443 functions and
+processed 429.
+
+**6. A false partial-parse warning.** HTML entities (`&sup2;`) inside JSX make
+the tsx grammar report a syntax error, so the scan declares "coverage is
+incomplete" while every function in the file was in fact indexed — verified on
+`src/utils/uiUtils.tsx`, 6 of 6 found.
 
 ## Non-goals
 
@@ -156,24 +168,40 @@ source for this material.
 ### D. Skipping trivial functions
 
 Exclude functions whose body is 1–3 non-blank lines from LLM analysis. On
-Chrono_Web this drops 602 of 1531 units (39.3%), leaving 929, and removes noise
-along with cost.
+Chrono_Web 846 of the 1839 parsed functions (46%) fall below it, leaving 993,
+and the filter removes noise along with cost.
 
 The threshold must be a named constant, overridable from the CLI, so a project
 where it proves wrong can adjust it without a code change. Skipped functions must
 be counted and reported in the scan summary — a silent 39% reduction in analysed
 code would be indistinguishable from a bug.
 
-### E. Two corrections
+### E. Stop losing functions to key collisions
 
-The partial-parse warning must not fire when every function in the file was
-recovered; HTML entities inside JSX are valid input, and a false "coverage is
-incomplete" teaches users to distrust accurate reports.
+Make the index key unique per function by including its start line, so
+same-named functions in one file no longer overwrite each other, and make
+`functions_found` report what is actually retrievable.
 
-The `functions_found` / `get_all_functions()` discrepancy must be explained
-before anything is changed. It is a measurement question, not a fix: if 1839 is
-the honest count, retrieval is losing functions; if 1531 is, the reported
-statistic is wrong. Determine which before touching either.
+This is a correctness fix that outranks everything else here: today the scanner
+reports success while never analysing 17% of the code, and nothing in the output
+reveals it.
+
+It interacts with section D, and favourably. Fixing collisions alone raises
+Chrono_Web from 1531 to 1839 units. But 46% of all parsed functions are 1–3 lines
+— the recovered ones are overwhelmingly one-line `renderCell` callbacks — so with
+the trivial filter applied the total lands at **993 units: fewer than the 1531
+analysed today, with nothing silently dropped**.
+
+Callers, callees, and fingerprints derive from these keys, so changing the key
+format affects call-graph lookups and finding identity. Existing scan databases
+carry fingerprints computed the old way; resume behaviour against an existing
+`deepscan.db` must be checked, not assumed.
+
+### F. Correct the false partial-parse warning
+
+The warning must not fire when every function in the file was recovered. HTML
+entities inside JSX are valid input, and a false "coverage is incomplete"
+teaches users to distrust accurate reports.
 
 ## Error handling
 
@@ -208,12 +236,14 @@ callbacks) yields exactly the expected units.
 Beyond the suite, each change is measured against Chrono_Web itself, comparing
 against the figures recorded in this document. Those numbers are the acceptance
 criteria: 9 of 121 files selected, 41 `VITE_` keys found across 8 files, 1531
-functions reduced to 929, and no partial-parse warning on `uiUtils.tsx`.
+1839 functions reduced to 993 with none lost to key collisions, and no
+partial-parse warning on `uiUtils.tsx`.
 
 ## Consequences
 
-Analysed units drop from 1531 to 929 functions plus roughly 9 whole-file units,
-cutting estimated scan time by about 14 hours. Authentication configuration and
+Analysed units go from 1531 today — with 308 silently dropped — to 993 with
+nothing lost, plus roughly 9 whole-file units, cutting estimated scan time by
+about 15 hours while increasing what is actually examined. Authentication configuration and
 environment-variable surface become visible for the first time. `.env` findings
 arrive with no token cost.
 
