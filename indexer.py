@@ -620,11 +620,12 @@ class CodeIndex:
         """Remove all entries for a file (for re-indexing)."""
         old_keys = self._by_file.pop(file_path, [])
         for key in old_keys:
-            self._functions.pop(key, None)
-            # Clean up name index
-            func_name = key.split(":")[-1].split(".")[-1]
-            if func_name in self._by_name:
-                self._by_name[func_name] = [k for k in self._by_name[func_name] if k != key]
+            func = self._functions.pop(key, None)
+            # Clean up name index: read the name off the FunctionInfo we just
+            # removed, not by parsing the key, since the key's segment count
+            # is an implementation detail that has changed before.
+            if func is not None and func.name in self._by_name:
+                self._by_name[func.name] = [k for k in self._by_name[func.name] if k != key]
             # Clean up call graph
             self._callees.pop(key, None)
             for callee, callers in self._callers.items():

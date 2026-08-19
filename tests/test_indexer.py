@@ -441,6 +441,26 @@ class TestIndexBuild:
         assert stats["files_parsed"] == 1
         assert index.get_stats()["total_functions"] == 2
 
+    def test_reindex_on_change_does_not_duplicate_name_entries(self, index, tmp_path):
+        """Re-indexing a modified file must not leave stale _by_name entries.
+
+        When a function's body changes but its start_line does not, its key
+        is identical across builds. _remove_file must still recognise and
+        strip the old _by_name entry before the rebuild re-adds it, or
+        find_symbol returns the same function twice.
+        """
+        f = tmp_path / "app.py"
+        f.write_text("def foo():\n    pass\n")
+        index.build(str(tmp_path))
+        assert len(index.find_symbol("foo")) == 1
+
+        f.write_text("def foo():\n    return 1\n")
+        index.build(str(tmp_path))
+
+        results = index.find_symbol("foo")
+        assert len(results) == 1
+        assert index._by_name["foo"] == list(dict.fromkeys(index._by_name["foo"]))
+
     def test_build_graceful_on_parse_error(self, index, tmp_path):
         f = tmp_path / "bad.py"
         f.write_bytes(b"\x80\x81\x82 invalid utf-8 mixed with def foo(): pass")
