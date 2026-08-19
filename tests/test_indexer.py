@@ -879,3 +879,46 @@ def test_threshold_can_be_lowered(tmp_path):
     idx = CodeIndex(min_function_lines=1)
     idx.build(str(f))
     assert [fn["name"] for fn in idx.get_all_functions()] == ["pick"]
+
+
+CONFIG_FILE = """\
+const configVariables = {
+    backendBaseUrl: import.meta.env.VITE_BACKEND_URL as string,
+};
+export default configVariables;
+"""
+
+# Contains "Auth", which matches the auth signal. Only the re-export check keeps
+# it out — which is exactly what this fixture is here to exercise.
+BARREL_FILE = """\
+export * from './AuthenticatedLayout';
+export * from './PageLayout';
+"""
+
+
+def test_config_file_without_functions_becomes_a_unit(tmp_path):
+    (tmp_path / "configVariables.ts").write_text(CONFIG_FILE)
+    idx = CodeIndex()
+    stats = idx.build(str(tmp_path))
+    units = idx.get_all_functions()
+    assert len(units) == 1
+    assert units[0]["name"] == "(file)"
+    assert "VITE_BACKEND_URL" in units[0]["body"]
+    assert stats["whole_file_units"] == 1
+
+
+def test_barrel_file_is_not_a_unit(tmp_path):
+    (tmp_path / "index.ts").write_text(BARREL_FILE)
+    idx = CodeIndex()
+    stats = idx.build(str(tmp_path))
+    assert idx.get_all_functions() == []
+    assert stats["whole_file_units"] == 0
+
+
+def test_oversized_config_file_is_skipped_not_truncated(tmp_path):
+    big = tmp_path / "huge.ts"
+    big.write_text("const c = { url: 'https://x' };\n" + ("// filler\n" * 20000))
+    idx = CodeIndex()
+    stats = idx.build(str(big))
+    assert idx.get_all_functions() == []
+    assert stats["whole_file_units"] == 0

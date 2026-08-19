@@ -34,6 +34,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -202,6 +203,38 @@ def _get_language_for_file(file_path: str) -> Optional[str]:
     """Get the language name for a file based on extension."""
     ext = os.path.splitext(file_path)[1].lower()
     return _LANGUAGE_MAP.get(ext)
+
+
+# A file with no functions is worth analysing when it configures something. The
+# signal list is deliberately broad: a false positive costs one LLM call, a false
+# negative is a blind spot in auth or configuration analysis.
+_CONFIG_SIGNALS = (
+    re.compile(r"import\.meta\.env|process\.env"),
+    re.compile(r"https?://"),
+    re.compile(r"export\s+(default\s+)?(const|var|let)\s+\w+\s*(:[^=]+)?=\s*\{"),
+    re.compile(r"localStorage|sessionStorage|document\.cookie"),
+    re.compile(r"(?i)\b(token|secret|apikey|api_key|credential|password)\b"),
+    re.compile(r"(?i)(auth|oidc|keycloak|oauth|jwt|login|permission|role)"),
+    re.compile(r"window\.(location|history|open)|document\.(write|getElementById)"),
+    re.compile(r"defineConfig|createRoot|configureStore|new\s+[A-Z]\w*Client\s*\("),
+)
+
+# Lines that carry no behaviour: a file made only of these is a barrel re-export.
+_REEXPORT_ONLY = re.compile(
+    r"^\s*(//.*|/\*.*|\*.*|import\s.*|export\s+\*.*|"
+    r"export\s+\{[^}]*\}\s*(from\s+.*)?;?|)$"
+)
+
+# Whole-file units are sent to the LLM in one prompt; past this they crowd out
+# the answer, so they are reported as skipped rather than silently truncated.
+MAX_WHOLE_FILE_CHARS = 20000
+
+
+def _is_analysable_config(source: str) -> bool:
+    """True when a function-less file configures something worth analysing."""
+    if all(_REEXPORT_ONLY.match(line) for line in source.splitlines()):
+        return False
+    return any(rx.search(source) for rx in _CONFIG_SIGNALS)
 
 
 # --- Data classes ---
@@ -572,7 +605,7 @@ class CodeIndex:
         """
         stats = {"files_parsed": 0, "files_skipped": 0, "functions_found": 0,
                  "calls_found": 0, "errors": 0, "files_with_syntax_errors": 0,
-                 "functions_skipped_trivial": 0}
+                 "functions_skipped_trivial": 0, "whole_file_units": 0}
         self._parser.reset_diagnostics()
 
         if os.path.isfile(target_path):
@@ -592,7 +625,18 @@ class CodeIndex:
                 functions, calls = self._parser.parse_file(file_path)
 
                 if not functions and _get_language_for_file(file_path):
-                    stats["files_skipped"] += 1
+                    unit = self._whole_file_unit(file_path)
+                    if unit is None:
+                        stats["files_skipped"] += 1
+                        continue
+                    self._remove_file(file_path)
+                    self._functions[unit.key] = unit
+                    self._by_name[unit.name].append(unit.key)
+                    self._by_file[file_path].append(unit.key)
+                    self._file_hashes[file_path] = content_hash
+                    stats["files_parsed"] += 1
+                    stats["whole_file_units"] += 1
+                    stats["functions_found"] = len(self._functions)
                     continue
 
                 # Remove old entries for this file before adding new ones
@@ -629,6 +673,29 @@ class CodeIndex:
                      stats["files_parsed"], stats["functions_found"],
                      stats["calls_found"], stats["functions_skipped_trivial"])
         return stats
+
+    def _whole_file_unit(self, file_path: str) -> Optional[FunctionInfo]:
+        """A function-less config file as a single analysable unit, or None."""
+        try:
+            with open(file_path, encoding="utf-8", errors="replace") as handle:
+                source = handle.read()
+        except OSError as e:
+            logger.warning("Cannot read %s for config analysis: %s", file_path, e)
+            return None
+
+        if len(source) > MAX_WHOLE_FILE_CHARS:
+            logger.warning("Config file %s is %d chars (limit %d) - not analysed",
+                           file_path, len(source), MAX_WHOLE_FILE_CHARS)
+            return None
+
+        if not _is_analysable_config(source):
+            return None
+
+        return FunctionInfo(
+            name="(file)", file_path=file_path, start_line=1,
+            end_line=len(source.splitlines()) or 1, body=source,
+            language=_get_language_for_file(file_path) or "",
+        )
 
     def _remove_file(self, file_path: str):
         """Remove all entries for a file (for re-indexing)."""
