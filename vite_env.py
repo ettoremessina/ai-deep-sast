@@ -46,15 +46,32 @@ def parse_env_file(path: str) -> List[str]:
     """Return the key names defined in a .env file, in order. Never the values."""
     keys: List[str] = []
     try:
-        with open(path, encoding="utf-8", errors="replace") as handle:
-            for line in handle:
-                if line.lstrip().startswith("#"):
-                    continue
-                match = _ENV_LINE.match(line)
-                if match:
-                    keys.append(match.group(1))
+        with open(path, "rb") as handle:
+            raw = handle.read()
     except OSError as e:
         logger.warning("Cannot read env file %s: %s", path, e)
+        return keys
+
+    try:
+        # Strict decode: a real .env is plain text, so any invalid byte means
+        # the file is binary or corrupted. Decoding with errors="replace"
+        # would silently swallow that and let mangled lines vanish instead of
+        # being flagged, which is indistinguishable from "no VITE_ keys here"
+        # to anyone reading the log. Fail loud (as a warning, not a raise) and
+        # skip the whole file instead.
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError:
+        logger.warning(
+            "Env file %s is not valid UTF-8 text; skipping as malformed", path
+        )
+        return keys
+
+    for line in text.splitlines():
+        if line.lstrip().startswith("#"):
+            continue
+        match = _ENV_LINE.match(line)
+        if match:
+            keys.append(match.group(1))
     return keys
 
 

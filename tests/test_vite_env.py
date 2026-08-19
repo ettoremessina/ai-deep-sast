@@ -16,6 +16,8 @@
 
 """Tests for the Vite environment-variable analyser."""
 
+import logging
+
 import pytest
 
 from vite_env import scan_vite_env, parse_env_file
@@ -71,3 +73,25 @@ def test_unreadable_env_file_does_not_raise(tmp_path):
 
 def test_no_env_files_is_silent(tmp_path):
     assert scan_vite_env(str(tmp_path), {}) == []
+
+
+def test_malformed_env_file_logs_warning_without_leaking_content(tmp_path, caplog):
+    bad = tmp_path / ".env"
+    sentinel = "SENTINEL_VALUE_9f8e7d6c5b4a"
+    # A file that starts out as plausible, valid text (with a real-looking
+    # value) and then degrades into binary garbage mid-file, as a corrupted
+    # or partially-written .env would in practice.
+    bad.write_bytes(("VITE_A=" + sentinel + "\n").encode("utf-8") + b"\xff\xfe\x00\x01")
+
+    with caplog.at_level(logging.WARNING):
+        findings = scan_vite_env(str(tmp_path), {})
+
+    assert findings == []
+
+    warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+    assert warnings, "expected a warning to be logged for a malformed .env file"
+    assert any(".env" in w.getMessage() for w in warnings)
+
+    log_text = caplog.text
+    assert sentinel not in log_text
+    assert "VITE_A" not in log_text
