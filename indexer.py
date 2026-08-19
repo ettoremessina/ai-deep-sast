@@ -219,10 +219,21 @@ _CONFIG_SIGNALS = (
     re.compile(r"defineConfig|createRoot|configureStore|new\s+[A-Z]\w*Client\s*\("),
 )
 
-# Lines that carry no behaviour: a file made only of these is a barrel re-export.
-_REEXPORT_ONLY = re.compile(
-    r"^\s*(//.*|/\*.*|\*.*|import\s.*|export\s+\*.*|"
-    r"export\s+\{[^}]*\}\s*(from\s+.*)?;?|)$"
+# Comments, matched over the whole text so a block comment spanning several
+# lines is removed in one piece rather than confusing a line-oriented check.
+_COMMENT = re.compile(r"//[^\n]*|/\*.*?\*/", re.DOTALL)
+
+# Import and re-export statements, matched over the whole text rather than
+# line by line: Prettier's default formatting wraps a grouped export across
+# several lines (`export {\n    Foo,\n    Bar,\n} from './x';`), and a
+# per-line check never recognises the interior lines as anything, so it
+# never confirms the file is barrel-only. Matching the statement as one
+# unit - non-greedy up to its terminating semicolon - handles it regardless
+# of how many lines it spans.
+_IMPORT_OR_REEXPORT = re.compile(
+    r"import\s[\s\S]*?;"
+    r"|export\s+\*\s*(as\s+\w+\s+)?from\s+['\"][^'\"]+['\"]\s*;?"
+    r"|export\s*\{[\s\S]*?\}\s*(from\s+['\"][^'\"]+['\"])?\s*;?"
 )
 
 # Whole-file units are sent to the LLM in one prompt; past this they crowd out
@@ -230,9 +241,22 @@ _REEXPORT_ONLY = re.compile(
 MAX_WHOLE_FILE_CHARS = 20000
 
 
+def _is_barrel_reexport(source: str) -> bool:
+    """True when a file contains nothing but imports and re-exports.
+
+    Strips comments and every recognised import/export statement from the
+    whole text and checks what is left is blank. Whole-text rather than
+    line-by-line so multi-line grouped exports are recognised as a single
+    statement instead of defeating the check on their interior lines.
+    """
+    remainder = _COMMENT.sub("", source)
+    remainder = _IMPORT_OR_REEXPORT.sub("", remainder)
+    return remainder.strip() == ""
+
+
 def _is_analysable_config(source: str) -> bool:
     """True when a function-less file configures something worth analysing."""
-    if all(_REEXPORT_ONLY.match(line) for line in source.splitlines()):
+    if _is_barrel_reexport(source):
         return False
     return any(rx.search(source) for rx in _CONFIG_SIGNALS)
 

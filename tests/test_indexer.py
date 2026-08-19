@@ -889,10 +889,16 @@ export default configVariables;
 """
 
 # Contains "Auth", which matches the auth signal. Only the re-export check keeps
-# it out — which is exactly what this fixture is here to exercise.
+# it out — which is exactly what this fixture is here to exercise. The grouped
+# export is spread across lines the way Prettier formats it by default; a
+# line-by-line barrel check never recognises its interior lines (e.g.
+# "    AuthenticatedLayout,") as anything and wrongly admits the file.
 BARREL_FILE = """\
-export * from './AuthenticatedLayout';
 export * from './PageLayout';
+export {
+    AuthenticatedLayout,
+    DefaultLayout,
+} from './LayoutComponents';
 """
 
 
