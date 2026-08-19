@@ -133,9 +133,13 @@ class LLMClient:
         except ImportError:
             raise RuntimeError("openai package not installed. Run: pip install openai")
 
-    def chat(self, system_prompt: str, user_message: str) -> Tuple[str, Dict[str, int]]:
+    def chat(self, system_prompt: str, user_message: str) -> Tuple[str, Dict[str, Any]]:
         """
-        Send a chat message and return (response_text, token_usage).
+        Send a chat message and return (response_text, call_info).
+
+        call_info carries the token counts plus finish_reason: "length" means the
+        model ran out of budget mid-answer, which leaves callers with a truncated
+        (and usually unparseable) response rather than a malformed one.
 
         Handles rate limiting with adaptive backoff.
         """
@@ -157,9 +161,23 @@ class LLMClient:
             output_tokens = usage.completion_tokens if usage else 0
             self.usage.record(input_tokens, output_tokens, self.model)
 
-            text = response.choices[0].message.content or ""
+            choice = response.choices[0]
+            text = choice.message.content or ""
+            finish_reason = getattr(choice, "finish_reason", "") or ""
 
-            token_info = {"input_tokens": input_tokens, "output_tokens": output_tokens}
+            # Truncation is silent otherwise: the caller just sees broken JSON.
+            if finish_reason == "length":
+                logger.warning(
+                    "Output truncated at the %d-token cap (prompt used %d tokens). "
+                    "Raise the model context window, lower max_tokens, or send less per call.",
+                    self.max_tokens, input_tokens,
+                )
+
+            token_info = {
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens,
+                "finish_reason": finish_reason,
+            }
             return text, token_info
 
         except Exception as e:

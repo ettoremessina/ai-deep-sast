@@ -337,8 +337,9 @@ class Detector:
             logger.error("Pre-send verification failed for %s — skipping", func_name)
             return []
 
-        response_text, _ = self.llm.chat(GUIDED_SYSTEM_PROMPT, safe_message)
-        return self._parse_findings_response(response_text)
+        response_text, call_info = self.llm.chat(GUIDED_SYSTEM_PROMPT, safe_message)
+        return self._parse_findings_response(
+            response_text, call_info.get("finish_reason", ""))
 
     def run_semgrep_guided(self, semgrep_results: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
@@ -489,8 +490,9 @@ class Detector:
             logger.error("Pre-send verification failed for %s — skipping", file_path)
             return []
 
-        response_text, _ = self.llm.chat(SEMGREP_GUIDED_SYSTEM_PROMPT, safe_message)
-        return self._parse_findings_response(response_text)
+        response_text, call_info = self.llm.chat(SEMGREP_GUIDED_SYSTEM_PROMPT, safe_message)
+        return self._parse_findings_response(
+            response_text, call_info.get("finish_reason", ""))
 
     def _group_semgrep_findings(self, results: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
         """Group Semgrep findings by file + function for batched validation."""
@@ -630,8 +632,9 @@ class Detector:
             logger.error("Pre-send verification failed for %s — skipping", func_name)
             return []
 
-        response_text, _ = self.llm.chat(RULE_BASED_SYSTEM_PROMPT, safe_message)
-        return self._parse_findings_response(response_text)
+        response_text, call_info = self.llm.chat(RULE_BASED_SYSTEM_PROMPT, safe_message)
+        return self._parse_findings_response(
+            response_text, call_info.get("finish_reason", ""))
 
     def _explore_batch(self, batch: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Explore a batch of related functions for design-level flaws."""
@@ -659,8 +662,9 @@ class Detector:
             logger.error("Pre-send verification failed for batch — skipping")
             return []
 
-        response_text, _ = self.llm.chat(EXPLORATORY_SYSTEM_PROMPT, safe_message)
-        return self._parse_findings_response(response_text)
+        response_text, call_info = self.llm.chat(EXPLORATORY_SYSTEM_PROMPT, safe_message)
+        return self._parse_findings_response(
+            response_text, call_info.get("finish_reason", ""))
 
     def _create_exploration_batches(self, functions: List[Dict[str, Any]],
                                     focus_areas: Optional[List[str]] = None,
@@ -688,7 +692,39 @@ class Detector:
         return batches
 
     @staticmethod
-    def _parse_findings_response(response_text: str) -> List[Dict[str, Any]]:
+    def _salvage_truncated_findings(text: str) -> List[Dict[str, Any]]:
+        """
+        Recover the findings that were completed before the response was cut off.
+
+        A response truncated at the token cap ends mid-object, which makes the whole
+        array unparseable — but the objects emitted before the cut are intact, and
+        they are real findings that would otherwise be dropped silently.
+        """
+        start = text.find("[")
+        if start < 0:
+            return []
+
+        decoder = json.JSONDecoder()
+        recovered: List[Dict[str, Any]] = []
+        pos = start + 1
+
+        while pos < len(text):
+            while pos < len(text) and text[pos] in " \t\r\n,":
+                pos += 1
+            if pos >= len(text) or text[pos] != "{":
+                break
+            try:
+                obj, pos = decoder.raw_decode(text, pos)
+            except ValueError:
+                break  # first incomplete object — everything after it is cut too
+            if isinstance(obj, dict):
+                recovered.append(obj)
+
+        return recovered
+
+    @staticmethod
+    def _parse_findings_response(response_text: str,
+                                 finish_reason: str = "") -> List[Dict[str, Any]]:
         """Parse LLM response into a list of finding dicts."""
         text = response_text.strip()
 
@@ -718,6 +754,23 @@ class Detector:
                         return [r for r in result if isinstance(r, dict)]
                 except json.JSONDecodeError:
                     pass
-            logger.warning("Failed to parse LLM response as JSON: %s...", text[:200])
+
+            # Last resort: keep whatever the model completed before the cut.
+            recovered = Detector._salvage_truncated_findings(text)
+            if recovered:
+                logger.warning(
+                    "Unparseable LLM response (finish_reason=%s, %d chars) — "
+                    "recovered %d complete finding(s) written before the cut",
+                    finish_reason or "unknown", len(text), len(recovered),
+                )
+            else:
+                logger.warning(
+                    "Unparseable LLM response (finish_reason=%s, %d chars) — "
+                    "no complete finding to recover, this batch is lost",
+                    finish_reason or "unknown", len(text),
+                )
+            # Full text only at DEBUG: it quotes scanned source into the log.
+            logger.debug("Unparsed LLM response in full:\n%s", text)
+            return recovered
 
         return []

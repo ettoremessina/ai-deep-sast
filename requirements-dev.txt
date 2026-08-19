@@ -1,0 +1,12 @@
+# Development and test dependencies.
+#
+# Install with:
+#   pip install -r requirements-dev.txt
+#
+# Run the suite with the venv's bin directory on PATH — tests/test_rules.py
+# shells out to the `semgrep` executable, not to its Python API:
+#   PATH="$PWD/.venv/bin:$PATH" .venv/bin/python -m pytest tests/
+
+-r requirements.txt
+
+pytest>=8.0.0

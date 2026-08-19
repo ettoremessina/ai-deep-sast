@@ -119,6 +119,88 @@ class TestResponseParsing:
         assert result == []
 
 
+# --- Truncated response recovery ---
+
+# A response cut off by max_tokens: one complete finding, then a partial one.
+TRUNCATED_ARRAY = '''[
+  {
+    "vulnerability_class": "path-traversal",
+    "description": "Builds a file path from unvalidated input.",
+    "cwe": "CWE-22",
+    "severity_tier": "ERROR",
+    "severity_cvss": 7.5
+  },
+  {
+    "vulnerability_class": "sql-injection",
+    "description": "Unsanitised inp'''
+
+
+class TestTruncationRecovery:
+    """Findings completed before the cut must survive a truncated response."""
+
+    def test_salvages_complete_object(self):
+        result = Detector._parse_findings_response(TRUNCATED_ARRAY, finish_reason="length")
+        assert len(result) == 1
+        assert result[0]["vulnerability_class"] == "path-traversal"
+        assert result[0]["cwe"] == "CWE-22"
+
+    def test_salvages_several_complete_objects(self):
+        text = json.dumps([
+            {"vulnerability_class": "xss", "description": "a"},
+            {"vulnerability_class": "sqli", "description": "b"},
+        ])
+        truncated = text[:-1] + ', {"vulnerability_class": "pa'
+        result = Detector._parse_findings_response(truncated, finish_reason="length")
+        assert len(result) == 2
+
+    def test_cut_before_first_object_completes(self):
+        text = '[\n  {\n    "vulnerability_class": "path-tra'
+        result = Detector._parse_findings_response(text, finish_reason="length")
+        assert result == []
+
+    def test_salvage_without_finish_reason(self):
+        """Callers that do not report finish_reason still get recovery."""
+        result = Detector._parse_findings_response(TRUNCATED_ARRAY)
+        assert len(result) == 1
+
+    def test_salvage_through_markdown_fence(self):
+        result = Detector._parse_findings_response(
+            "```json\n" + TRUNCATED_ARRAY, finish_reason="length")
+        assert len(result) == 1
+
+    def test_complete_response_unaffected(self):
+        text = json.dumps([{"vulnerability_class": "xss", "description": "x"}])
+        result = Detector._parse_findings_response(text, finish_reason="stop")
+        assert len(result) == 1
+
+    def test_garbage_still_returns_empty(self):
+        assert Detector._parse_findings_response("not json", finish_reason="stop") == []
+
+    def test_recovered_finding_reaches_the_store(self, detector, mock_llm, store):
+        """The point of the salvage: a truncated batch still yields a candidate."""
+        truncated = '''[
+  {
+    "function_name": "handle_login",
+    "file_path": "app.py",
+    "vulnerability_class": "path-traversal",
+    "description": "Builds a file path from unvalidated input.",
+    "cwe": "CWE-22",
+    "severity_tier": "ERROR",
+    "severity_cvss": 7.5
+  },
+  {
+    "function_name": "safe_function",
+    "vulnerability_class": "sql-inj'''
+        mock_llm.chat.return_value = (
+            truncated,
+            {"input_tokens": 7000, "output_tokens": 1100, "finish_reason": "length"},
+        )
+
+        stats = detector.run_exploratory()
+        assert stats["candidates_created"] == 1
+        assert stats["errors"] == 0
+
+
 # --- Rule-based detection ---
 
 class TestRuleBased:

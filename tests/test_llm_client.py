@@ -17,6 +17,8 @@
 """Tests for the LLM client (API key resolution, token tracking)."""
 
 import os
+from unittest.mock import MagicMock
+
 import pytest
 
 from llm_client import LLMClient, TokenUsage, _load_api_key
@@ -111,3 +113,40 @@ class TestLLMClient:
     def test_explicit_api_key(self):
         client = LLMClient(api_key="my-key")
         assert client._api_key == "my-key"
+
+
+# --- Finish reason ---
+
+def _client_returning(content: str, finish_reason: str) -> LLMClient:
+    """An LLMClient wired to a stub completion, bypassing _ensure_client."""
+    client = LLMClient(api_key="k")
+    completion = MagicMock()
+    completion.usage.prompt_tokens = 100
+    completion.usage.completion_tokens = 50
+    choice = MagicMock()
+    choice.message.content = content
+    choice.finish_reason = finish_reason
+    completion.choices = [choice]
+
+    inner = MagicMock()
+    inner.chat.completions.create.return_value = completion
+    client._client = inner
+    return client
+
+
+class TestFinishReason:
+    """chat() must report why generation stopped, to detect truncation."""
+
+    def test_reports_length(self):
+        _, info = _client_returning('[{"a": 1', "length").chat("sys", "usr")
+        assert info["finish_reason"] == "length"
+
+    def test_reports_stop(self):
+        text, info = _client_returning("[]", "stop").chat("sys", "usr")
+        assert info["finish_reason"] == "stop"
+        assert text == "[]"
+
+    def test_token_counts_still_reported(self):
+        _, info = _client_returning("[]", "stop").chat("sys", "usr")
+        assert info["input_tokens"] == 100
+        assert info["output_tokens"] == 50
