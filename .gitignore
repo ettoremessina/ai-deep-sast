@@ -52,3 +52,6 @@ FOUNDRY_DESIGN.md
 .vscode/
 *.swp
 *.swo
+
+# Subagent-driven development scratch (ledger, briefs, review packages)
+.superpowers/
