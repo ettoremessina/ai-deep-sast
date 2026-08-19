@@ -16,11 +16,13 @@
 
 """Tests for the LLM client (API key resolution, token tracking)."""
 
+import importlib
 import os
 from unittest.mock import MagicMock
 
 import pytest
 
+import llm_client
 from llm_client import LLMClient, TokenUsage, _load_api_key
 
 
@@ -113,6 +115,32 @@ class TestLLMClient:
     def test_explicit_api_key(self):
         client = LLMClient(api_key="my-key")
         assert client._api_key == "my-key"
+
+
+# --- Output budget ---
+
+class TestMaxTokens:
+    """The output cap must be reachable without editing the source."""
+
+    def test_default_when_env_unset(self, monkeypatch):
+        monkeypatch.delenv("LLM_MAX_TOKENS", raising=False)
+        assert LLMClient().max_tokens == importlib.reload(llm_client).DEFAULT_MAX_TOKENS
+
+    def test_env_var_overrides_default(self, monkeypatch):
+        monkeypatch.setenv("LLM_MAX_TOKENS", "12288")
+        reloaded = importlib.reload(llm_client)
+        assert reloaded.LLMClient().max_tokens == 12288
+
+    def test_explicit_argument_wins(self, monkeypatch):
+        monkeypatch.setenv("LLM_MAX_TOKENS", "12288")
+        reloaded = importlib.reload(llm_client)
+        assert reloaded.LLMClient(max_tokens=2048).max_tokens == 2048
+
+    def test_junk_env_falls_back_to_default(self, monkeypatch):
+        """A typo must not crash a multi-hour scan at the first LLM call."""
+        monkeypatch.setenv("LLM_MAX_TOKENS", "not-a-number")
+        reloaded = importlib.reload(llm_client)
+        assert reloaded.LLMClient().max_tokens == reloaded.DEFAULT_MAX_TOKENS
 
 
 # --- Finish reason ---

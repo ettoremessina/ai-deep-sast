@@ -36,7 +36,29 @@ logger = logging.getLogger(__name__)
 # LLM configuration — override via environment variables
 DEFAULT_BASE_URL = os.environ.get("LLM_BASE_URL", "https://api.openai.com/v1")
 DEFAULT_MODEL = os.environ.get("LLM_MODEL", "gpt-4o")
-DEFAULT_MAX_TOKENS = 4096
+
+
+def _default_max_tokens() -> int:
+    """
+    Output budget per call, overridable with LLM_MAX_TOKENS.
+
+    Reasoning models spend this budget thinking before they emit anything, so a
+    cap sized for the answer alone truncates them mid-JSON. Raise it to fit
+    reasoning + answer, keeping prompt + budget inside the model's context.
+    """
+    raw = os.environ.get("LLM_MAX_TOKENS", "")
+    if raw:
+        try:
+            value = int(raw)
+            if value > 0:
+                return value
+            logger.warning("LLM_MAX_TOKENS must be positive, got %r — using 4096", raw)
+        except ValueError:
+            logger.warning("LLM_MAX_TOKENS is not an integer (%r) — using 4096", raw)
+    return 4096
+
+
+DEFAULT_MAX_TOKENS = _default_max_tokens()
 
 
 def _load_api_key() -> Optional[str]:

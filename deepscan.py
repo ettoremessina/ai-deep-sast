@@ -79,13 +79,15 @@ class Orchestrator:
                  skip_exploratory: bool = False,
                  llm_url: Optional[str] = None,
                  llm_api_key: Optional[str] = None,
-                 llm_model: Optional[str] = None):
+                 llm_model: Optional[str] = None,
+                 max_tokens: Optional[int] = None):
         self.target = os.path.abspath(target)
         self.output_dir = output_dir
         self.db_path = db_path or os.path.join(output_dir, "deepscan.db")
         self.llm_url = llm_url
         self.llm_api_key = llm_api_key
         self.llm_model = llm_model
+        self.max_tokens = max_tokens
         self.show_needs_review = show_needs_review
         self.repo_url = repo_url
         self.commit_sha = commit_sha or self._get_git_commit()
@@ -451,6 +453,8 @@ class Orchestrator:
             kwargs["api_key"] = self.llm_api_key
         if self.llm_model:
             kwargs["model"] = self.llm_model
+        if self.max_tokens:
+            kwargs["max_tokens"] = self.max_tokens
         return LLMClient(**kwargs)
 
     @staticmethod
@@ -492,6 +496,11 @@ Examples:
                         help="LLM API key (default: env LLM_API_KEY)")
     parser.add_argument("--llm-model", default=None,
                         help="LLM model name (default: env LLM_MODEL or gpt-4o)")
+    parser.add_argument("--max-tokens", type=int, default=None,
+                        help="Output tokens per LLM call (default: env LLM_MAX_TOKENS or 4096). "
+                             "Reasoning models spend this budget thinking before answering, so "
+                             "too low a value truncates the response mid-JSON. Keep prompt + "
+                             "this value inside the model's context window.")
     parser.add_argument("--show-needs-review", action="store_true",
                         help="Include needs-review findings in the report")
     parser.add_argument("--repo-url", default=None,
@@ -536,6 +545,7 @@ Examples:
         llm_url=args.llm_url,
         llm_api_key=args.llm_api_key,
         llm_model=args.llm_model,
+        max_tokens=args.max_tokens,
     )
 
     results = orchestrator.run()
