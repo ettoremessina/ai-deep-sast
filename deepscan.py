@@ -51,6 +51,7 @@ from llm_client import LLMClient
 from redactor import run_semgrep_for_secrets
 from rule_matcher import RuleMatcher
 from triager import Triager
+from vite_env import scan_vite_env
 
 logger = logging.getLogger("deepscan")
 
@@ -295,6 +296,7 @@ class Orchestrator:
         self.triager = Triager(self.llm, self.index, self.store)
 
         stats: Dict[str, Any] = {}
+        stats["vite_env"] = self._run_vite_env()
 
         if self.guided and self.guide_rules == "semgrep":
             # Semgrep-guided: Opus validates Semgrep findings
@@ -320,6 +322,31 @@ class Orchestrator:
                 stats["exploratory"] = self.detector.run_exploratory()
 
         return stats
+
+    def _run_vite_env(self) -> Dict[str, Any]:
+        """Report Vite env variables inlined into the client bundle."""
+        result = {"keys_found": 0, "candidates_created": 0}
+        findings = scan_vite_env(self.target, self.index.get_env_reads())
+        result["keys_found"] = len(findings)
+
+        for finding in findings:
+            fid = self.store.add_finding(
+                file_path=finding["files"][0],
+                vulnerability_class="client-exposed-env-variable",
+                description=finding["description"],
+                detection_technique="vite-env",
+                severity_tier=finding["severity_tier"],
+                cwe="CWE-200",
+                metadata={"key": finding["key"], "files": finding["files"],
+                          "use_sites": finding["use_sites"]},
+            )
+            if fid:
+                result["candidates_created"] += 1
+
+        if findings:
+            logger.info("Vite env: %d exposed keys, %d candidates",
+                        result["keys_found"], result["candidates_created"])
+        return result
 
     def _run_semgrep(self) -> List[Dict[str, Any]]:
         """Run Semgrep scan and return results list."""

@@ -928,3 +928,18 @@ def test_oversized_config_file_is_skipped_not_truncated(tmp_path):
     stats = idx.build(str(big))
     assert idx.get_all_functions() == []
     assert stats["whole_file_units"] == 0
+
+
+def test_import_meta_env_reads_are_collected(tmp_path):
+    (tmp_path / "config.ts").write_text(
+        "const c = {\n"
+        "    a: import.meta.env.VITE_API_URL as string,\n"
+        "    b: import.meta.env.VITE_CLIENT_ID as string,\n"
+        "};\n"
+        "export default c;\n"
+    )
+    idx = CodeIndex()
+    idx.build(str(tmp_path))
+    reads = idx.get_env_reads()
+    assert sorted(reads) == ["VITE_API_URL", "VITE_CLIENT_ID"]
+    assert reads["VITE_API_URL"] == [str(tmp_path / "config.ts")]

@@ -223,6 +223,10 @@ _CONFIG_SIGNALS = (
 # lines is removed in one piece rather than confusing a line-oriented check.
 _COMMENT = re.compile(r"//[^\n]*|/\*.*?\*/", re.DOTALL)
 
+# import.meta.env.VITE_FOO reads, so a Vite env exposure finding can name the
+# files that actually consume the key rather than just where it is defined.
+_ENV_READ = re.compile(r"import\.meta\.env\.([A-Za-z_][A-Za-z0-9_]*)")
+
 # Import and re-export statements, matched over the whole text rather than
 # line by line: Prettier's default formatting wraps a grouped export across
 # several lines (`export {\n    Foo,\n    Bar,\n} from './x';`), and a
@@ -610,6 +614,7 @@ class CodeIndex:
         self._callees: Dict[str, Set[str]] = defaultdict(set)  # caller_key → {callee_names}
         self._callers: Dict[str, Set[str]] = defaultdict(set)  # callee_name → {caller_keys}
         self._file_hashes: Dict[str, str] = {}  # file_path → content hash
+        self._env_reads: Dict[str, List[str]] = {}  # VITE_ key → files reading it
         self._parser = TreeSitterParser()
         self._queryable = False
         self.min_function_lines = min_function_lines
@@ -640,6 +645,13 @@ class CodeIndex:
         for file_path in files:
             try:
                 content_hash = self._hash_file(file_path)
+
+                # Record import.meta.env reads for every recognised source file,
+                # regardless of whether it yields functions or a whole-file unit
+                # below (or neither) — a config file with no functions is exactly
+                # where these reads live.
+                if _get_language_for_file(file_path):
+                    self._record_env_reads(file_path)
 
                 # Incremental: skip unchanged files (FR-026)
                 if file_path in self._file_hashes and self._file_hashes[file_path] == content_hash:
@@ -774,6 +786,20 @@ class CodeIndex:
             for chunk in iter(lambda: f.read(8192), b""):
                 h.update(chunk)
         return h.hexdigest()
+
+    def _record_env_reads(self, file_path: str) -> None:
+        """Note which import.meta.env variables this file reads."""
+        try:
+            with open(file_path, encoding="utf-8", errors="replace") as handle:
+                source = handle.read()
+        except OSError:
+            return  # unreadable files are already reported by the parser
+        for name in set(_ENV_READ.findall(source)):
+            self._env_reads.setdefault(name, []).append(file_path)
+
+    def get_env_reads(self) -> Dict[str, List[str]]:
+        """Map each import.meta.env variable to the files reading it."""
+        return {k: sorted(set(v)) for k, v in self._env_reads.items()}
 
     # --- Query interface (FR-022) ---
 
