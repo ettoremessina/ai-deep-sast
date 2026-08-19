@@ -45,7 +45,9 @@ def store(tmp_path):
 def index(tmp_path):
     f = tmp_path / "app.py"
     f.write_text(PYTHON_SAMPLE)
-    idx = CodeIndex()
+    # min_function_lines=1: these tests exercise the detector, not the
+    # trivial-skip feature, and PYTHON_SAMPLE's bodies are intentionally short.
+    idx = CodeIndex(min_function_lines=1)
     idx.build(str(f))
     return idx
 

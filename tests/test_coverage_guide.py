@@ -47,7 +47,9 @@ def store(tmp_path):
 def index(tmp_path):
     (tmp_path / "app.py").write_text(PYTHON_SAMPLE)
     (tmp_path / "Foo.java").write_text(JAVA_SAMPLE)
-    idx = CodeIndex()
+    # min_function_lines=1: these tests exercise coverage tracking, not the
+    # trivial-skip feature, and the sample bodies are intentionally short.
+    idx = CodeIndex(min_function_lines=1)
     idx.build(str(tmp_path))
     return idx
 

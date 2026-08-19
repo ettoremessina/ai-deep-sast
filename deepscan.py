@@ -80,7 +80,8 @@ class Orchestrator:
                  llm_url: Optional[str] = None,
                  llm_api_key: Optional[str] = None,
                  llm_model: Optional[str] = None,
-                 max_tokens: Optional[int] = None):
+                 max_tokens: Optional[int] = None,
+                 min_function_lines: Optional[int] = None):
         self.target = os.path.abspath(target)
         self.output_dir = output_dir
         self.db_path = db_path or os.path.join(output_dir, "deepscan.db")
@@ -88,6 +89,7 @@ class Orchestrator:
         self.llm_api_key = llm_api_key
         self.llm_model = llm_model
         self.max_tokens = max_tokens
+        self.min_function_lines = min_function_lines
         self.show_needs_review = show_needs_review
         self.repo_url = repo_url
         self.commit_sha = commit_sha or self._get_git_commit()
@@ -253,7 +255,10 @@ class Orchestrator:
     def _init_components(self):
         """Initialise all agent components."""
         self.store = FindingStore(db_path=self.db_path)
-        self.index = CodeIndex()
+        kwargs = {}
+        if self.min_function_lines:
+            kwargs["min_function_lines"] = self.min_function_lines
+        self.index = CodeIndex(**kwargs)
 
         if not self.dry_run:
             self.llm = self._build_llm_client()
@@ -503,6 +508,11 @@ Examples:
                              "Reasoning models spend this budget thinking before answering, so "
                              "too low a value truncates the response mid-JSON. Keep prompt + "
                              "this value inside the model's context window.")
+    parser.add_argument("--min-function-lines", type=int, default=None,
+                        help="Minimum non-blank body lines for a function to be analysed "
+                             "(default: 4). One-line callbacks such as `x => x.id` carry no "
+                             "security signal but cost a full LLM call each. Use 1 to analyse "
+                             "everything.")
     parser.add_argument("--show-needs-review", action="store_true",
                         help="Include needs-review findings in the report")
     parser.add_argument("--repo-url", default=None,
@@ -548,6 +558,7 @@ Examples:
         llm_api_key=args.llm_api_key,
         llm_model=args.llm_model,
         max_tokens=args.max_tokens,
+        min_function_lines=args.min_function_lines,
     )
 
     results = orchestrator.run()

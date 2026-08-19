@@ -528,6 +528,16 @@ class TreeSitterParser:
 
 # --- Code Index ---
 
+# Bodies at or below this many non-blank lines are callbacks and predicates
+# (`x => x.id`), not analysable units. Overridable via --min-function-lines.
+DEFAULT_MIN_FUNCTION_LINES = 4
+
+
+def _body_line_count(body: str) -> int:
+    """Non-blank lines in a function body."""
+    return len([line for line in (body or "").splitlines() if line.strip()])
+
+
 class CodeIndex:
     """
     Queryable code index implementing FR-022.
@@ -536,7 +546,7 @@ class CodeIndex:
     find_symbol, full_text_search, list_functions_in_file.
     """
 
-    def __init__(self):
+    def __init__(self, min_function_lines: int = DEFAULT_MIN_FUNCTION_LINES):
         self._functions: Dict[str, FunctionInfo] = {}  # key → FunctionInfo
         self._by_name: Dict[str, List[str]] = defaultdict(list)  # name → [keys]
         self._by_file: Dict[str, List[str]] = defaultdict(list)  # file → [keys]
@@ -545,6 +555,7 @@ class CodeIndex:
         self._file_hashes: Dict[str, str] = {}  # file_path → content hash
         self._parser = TreeSitterParser()
         self._queryable = False
+        self.min_function_lines = min_function_lines
 
     @property
     def is_queryable(self) -> bool:
@@ -560,7 +571,8 @@ class CodeIndex:
         Degrades gracefully on unparseable files (FR-028).
         """
         stats = {"files_parsed": 0, "files_skipped": 0, "functions_found": 0,
-                 "calls_found": 0, "errors": 0, "files_with_syntax_errors": 0}
+                 "calls_found": 0, "errors": 0, "files_with_syntax_errors": 0,
+                 "functions_skipped_trivial": 0}
         self._parser.reset_diagnostics()
 
         if os.path.isfile(target_path):
@@ -587,6 +599,9 @@ class CodeIndex:
                 self._remove_file(file_path)
 
                 for func in functions:
+                    if _body_line_count(func.body) < self.min_function_lines:
+                        stats["functions_skipped_trivial"] += 1
+                        continue
                     self._functions[func.key] = func
                     self._by_name[func.name].append(func.key)
                     self._by_file[file_path].append(func.key)
@@ -597,9 +612,6 @@ class CodeIndex:
 
                 self._file_hashes[file_path] = content_hash
                 stats["files_parsed"] += 1
-                # Count what is retrievable, not what was parsed: anything the
-                # key collapses would otherwise be reported as analysed.
-                stats["functions_found"] += len({func.key for func in functions})
                 stats["calls_found"] += len(calls)
 
             except Exception as e:
@@ -611,9 +623,11 @@ class CodeIndex:
             logger.warning("%d file(s) parsed only partially - coverage is incomplete",
                            stats["files_with_syntax_errors"])
 
+        stats["functions_found"] = len(self._functions)
         self._queryable = stats["functions_found"] > 0 or len(self._functions) > 0
-        logger.info("Index built: %d files, %d functions, %d calls",
-                     stats["files_parsed"], stats["functions_found"], stats["calls_found"])
+        logger.info("Index built: %d files, %d functions, %d calls (%d trivial skipped)",
+                     stats["files_parsed"], stats["functions_found"],
+                     stats["calls_found"], stats["functions_skipped_trivial"])
         return stats
 
     def _remove_file(self, file_path: str):

@@ -314,7 +314,10 @@ def multi_lang_dir(tmp_path):
 
 @pytest.fixture
 def index():
-    return CodeIndex()
+    # min_function_lines=1: these tests exercise indexing/query/persistence
+    # behaviour with small fixture bodies, not the trivial-skip feature
+    # itself, which has its own dedicated tests below.
+    return CodeIndex(min_function_lines=1)
 
 
 # --- TreeSitterParser ---
@@ -535,7 +538,7 @@ class TestReactParsing:
         src = TWO_COMPONENTS_SAMPLE
         f = tmp_path / "Forms.jsx"
         f.write_text(src)
-        index = CodeIndex()
+        index = CodeIndex(min_function_lines=1)  # 1-line handlers by design
         index.build(str(f))
         matches = index.find_symbol("onSubmit")
         assert len(matches) == 2
@@ -558,7 +561,7 @@ class TestReactParsing:
     def test_mjs_and_mts_extensions_indexed(self, tmp_path):
         (tmp_path / "a.mjs").write_text(MJS_SAMPLE)
         (tmp_path / "b.mts").write_text(MTS_SAMPLE)
-        index = CodeIndex()
+        index = CodeIndex(min_function_lines=1)  # 1-line samples by design
         stats = index.build(str(tmp_path))
         assert stats["files_parsed"] == 2
         names = {f["name"] for f in index.get_all_functions()}
@@ -837,7 +840,8 @@ def test_same_named_functions_in_one_file_all_indexed(tmp_path):
         "  { renderCell: (p) => <span>{p.b}</span> },\n"
         "];\n"
     )
-    idx = CodeIndex()
+    # min_function_lines=1: this test is about key uniqueness, not triviality.
+    idx = CodeIndex(min_function_lines=1)
     stats = idx.build(str(f))
     names = [fn["name"] for fn in idx.get_all_functions()]
     assert names.count("renderCell") == 2
@@ -848,3 +852,30 @@ def test_key_includes_start_line():
     a = FunctionInfo("f", "a.ts", 1, 2, "body", "typescript")
     b = FunctionInfo("f", "a.ts", 10, 11, "body", "typescript")
     assert a.key != b.key
+
+
+def test_trivial_functions_skipped_by_default(tmp_path):
+    f = tmp_path / "cb.ts"
+    f.write_text(
+        "export const pick = (x) => x.id;\n"
+        "export function real(items) {\n"
+        "    const out = [];\n"
+        "    for (const i of items) {\n"
+        "        out.push(i.id);\n"
+        "    }\n"
+        "    return out;\n"
+        "}\n"
+    )
+    idx = CodeIndex()
+    stats = idx.build(str(f))
+    names = [fn["name"] for fn in idx.get_all_functions()]
+    assert names == ["real"]
+    assert stats["functions_skipped_trivial"] == 1
+
+
+def test_threshold_can_be_lowered(tmp_path):
+    f = tmp_path / "cb.ts"
+    f.write_text("export const pick = (x) => x.id;\n")
+    idx = CodeIndex(min_function_lines=1)
+    idx.build(str(f))
+    assert [fn["name"] for fn in idx.get_all_functions()] == ["pick"]

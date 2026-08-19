@@ -28,16 +28,22 @@ from deepscan import Orchestrator
 PYTHON_SAMPLE = '''\
 def handle_login(username, password):
     query = f"SELECT * FROM users WHERE name='{username}'"
-    return db.execute(query)
+    connection = get_db_connection()
+    result = connection.execute(query)
+    return result
 
 def safe_function():
-    return "hello"
+    greeting = "hello"
+    logger.info(greeting)
+    return greeting
 '''
 
 JAVA_SAMPLE = '''\
 public class App {
     public void processInput(String input) {
-        System.out.println(input);
+        String sanitized = input.trim();
+        System.out.println(sanitized);
+        logger.info(sanitized);
     }
 }
 '''
@@ -101,7 +107,10 @@ class TestDryRun:
 
     def test_dry_run_single_file(self, tmp_path, output_dir):
         f = tmp_path / "single.py"
-        f.write_text("def foo(): pass\ndef bar(): pass\n")
+        f.write_text(
+            "def foo():\n    x = 1\n    y = 2\n    return x + y\n"
+            "def bar():\n    a = 1\n    b = 2\n    return a + b\n"
+        )
         orch = Orchestrator(target=str(f), output_dir=output_dir, dry_run=True)
         results = orch.run()
         assert results["success"] is True
