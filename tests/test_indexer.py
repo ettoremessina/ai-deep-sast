@@ -21,7 +21,8 @@ import os
 
 import pytest
 
-from indexer import CodeIndex, FunctionInfo, TreeSitterParser
+from indexer import (INDEX_KEY_FORMAT_VERSION, CodeIndex, FunctionInfo,
+                     TreeSitterParser)
 
 
 # --- Test fixtures ---
@@ -1055,3 +1056,122 @@ def test_chained_entities_in_jsx_text_are_not_a_partial_parse(tmp_path):
     stats = idx.build(str(f))
     assert [fn["name"] for fn in idx.get_all_functions()] == ["Label"]
     assert stats["files_with_syntax_errors"] == 0
+
+
+# --- Duplicate-name resolution (whole-branch review, Finding 2) ---
+
+DUPLICATE_NAME_SAMPLE = """\
+def fetch(url):
+    result = first_helper(url)
+    log(result)
+    return result
+
+
+def fetch(url):
+    result = second_helper(url)
+    log(result)
+    return result
+"""
+
+
+@pytest.fixture
+def duplicate_index(tmp_path):
+    f = tmp_path / "dup.py"
+    f.write_text(DUPLICATE_NAME_SAMPLE)
+    # min_function_lines=1: these bodies are short by design; the subject here
+    # is name resolution, not the trivial-skip feature.
+    idx = CodeIndex(min_function_lines=1)
+    idx.build(str(f))
+    return idx, str(f)
+
+
+def test_unique_name_defaults_to_qualified_name():
+    f = FunctionInfo("renderCell", "grid.tsx", 4, 9, "body", "tsx", "getColumns")
+    assert f.unique_name == "getColumns.renderCell"
+
+
+def test_unique_name_carries_the_occurrence_index():
+    f = FunctionInfo("renderCell", "grid.tsx", 12, 17, "body", "tsx", "getColumns",
+                     occurrence=1)
+    assert f.unique_name == "getColumns.renderCell#1"
+
+
+def test_duplicate_names_get_distinct_unique_names(duplicate_index):
+    idx, path = duplicate_index
+    assert [f["unique_name"] for f in idx.list_functions_in_file(path)] == ["fetch", "fetch#1"]
+
+
+def test_get_function_body_resolves_the_second_duplicate(duplicate_index):
+    # Plain-name lookup returns the first match. A finding reported against
+    # the second same-named function would otherwise be triaged against the
+    # first one's body - a confident verdict on the wrong code.
+    idx, path = duplicate_index
+    body = idx.get_function_body(path, "fetch#1")
+    assert body is not None
+    assert "second_helper" in body
+    assert "first_helper" not in body
+
+
+def test_get_function_body_plain_name_still_returns_the_first(duplicate_index):
+    idx, path = duplicate_index
+    assert "first_helper" in idx.get_function_body(path, "fetch")
+
+
+def test_get_callees_resolves_the_second_duplicate(duplicate_index):
+    idx, path = duplicate_index
+    assert idx.get_callees(path, "fetch#1") == ["log", "second_helper"]
+    assert idx.get_callees(path, "fetch") == ["first_helper", "log"]
+
+
+def test_unique_name_survives_save_and_load(duplicate_index, tmp_path):
+    idx, path = duplicate_index
+    save_path = str(tmp_path / "dup_index.json")
+    idx.save(save_path)
+
+    reloaded = CodeIndex()
+    assert reloaded.load(save_path)
+    assert "second_helper" in reloaded.get_function_body(path, "fetch#1")
+
+
+# --- Index key-format version (Finding 4) ---
+
+def test_save_stamps_the_key_format_version(index, python_file, tmp_path):
+    index.build(python_file)
+    save_path = str(tmp_path / "stamped.json")
+    index.save(save_path)
+    with open(save_path) as handle:
+        assert json.load(handle)["key_format_version"] == INDEX_KEY_FORMAT_VERSION
+
+
+def test_load_rejects_an_unstamped_index(index, python_file, tmp_path):
+    # A pre-branch index file holds collided keys built by the old logic.
+    # Reusing it silently disables the collision and trivial-filter fixes, so
+    # it has to force a full rebuild rather than load.
+    index.build(python_file)
+    save_path = str(tmp_path / "unstamped.json")
+    index.save(save_path)
+    with open(save_path) as handle:
+        data = json.load(handle)
+    del data["key_format_version"]
+    with open(save_path, "w") as handle:
+        json.dump(data, handle)
+
+    stale = CodeIndex()
+    assert stale.load(save_path) is False
+    assert stale.get_all_functions() == []
+    assert stale.is_queryable is False
+
+
+def test_load_rejects_a_superseded_key_format_version(index, python_file, tmp_path):
+    index.build(python_file)
+    save_path = str(tmp_path / "old.json")
+    index.save(save_path)
+    with open(save_path) as handle:
+        data = json.load(handle)
+    data["key_format_version"] = INDEX_KEY_FORMAT_VERSION - 1
+    with open(save_path, "w") as handle:
+        json.dump(data, handle)
+
+    stale = CodeIndex()
+    assert stale.load(save_path) is False
+    assert stale.get_all_functions() == []

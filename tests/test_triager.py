@@ -305,3 +305,52 @@ class TestContextBuilding:
         }
         context = t._build_investigation_context(finding)
         assert "trust boundary" in context
+
+
+# --- Duplicate function names (whole-branch review, Finding 2) ---
+
+DUPLICATE_NAME_SAMPLE = '''\
+def fetch(url):
+    result = first_helper(url)
+    log(result)
+    return result
+
+
+def fetch(url):
+    result = second_helper(url)
+    log(result)
+    return result
+'''
+
+
+class TestDuplicateFunctionNames:
+    """
+    A finding reported against the second of two same-named functions must be
+    investigated against that function's body. Resolving by plain name
+    returned the first match, so the triager issued a verdict on code the
+    detector never flagged.
+    """
+
+    @pytest.fixture
+    def dup(self, tmp_path, mock_llm, store):
+        f = tmp_path / "dup.py"
+        f.write_text(DUPLICATE_NAME_SAMPLE)
+        idx = CodeIndex(min_function_lines=1)
+        idx.build(str(f))
+        return Triager(mock_llm, idx, store), str(f)
+
+    def test_context_uses_the_reported_duplicate_body(self, dup, store):
+        triager, path = dup
+        fid = _add_candidate(store, file_path=path, func_name="fetch#1")
+
+        context = triager._build_investigation_context(store.get_finding(fid))
+        assert "second_helper" in context
+        assert "first_helper" not in context
+
+    def test_plain_name_still_resolves_to_the_first(self, dup, store):
+        triager, path = dup
+        fid = _add_candidate(store, file_path=path, func_name="fetch")
+
+        context = triager._build_investigation_context(store.get_finding(fid))
+        assert "first_helper" in context
+        assert "second_helper" not in context

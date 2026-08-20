@@ -346,11 +346,33 @@ def _is_analysable_config(source: str) -> bool:
 
 # --- Data classes ---
 
+# Separates a qualified name from its occurrence index in unique_name. '#' is
+# not legal in an identifier in any indexed language, so a unique_name can
+# always be split back into (qualified_name, occurrence) without ambiguity.
+OCCURRENCE_SEP = "#"
+
+# Bumped whenever the shape of an index key or of a persisted function record
+# changes. A saved index written under an older format is not reusable: its
+# keys collide where the current builder would keep entries apart.
+INDEX_KEY_FORMAT_VERSION = 2
+
+
+def strip_occurrence(name: str) -> str:
+    """Drop the occurrence discriminator from a unique_name, if any.
+
+    The call graph is keyed by plain callee names, which never carry a
+    discriminator, so a lookup driven by a stored finding's function_name has
+    to strip it first.
+    """
+    return name.split(OCCURRENCE_SEP, 1)[0]
+
+
 class FunctionInfo:
     """Information about a function/method in the codebase."""
 
     def __init__(self, name: str, file_path: str, start_line: int, end_line: int,
-                 body: str, language: str, class_name: Optional[str] = None):
+                 body: str, language: str, class_name: Optional[str] = None,
+                 occurrence: int = 0):
         self.name = name
         self.file_path = file_path
         self.start_line = start_line
@@ -358,12 +380,33 @@ class FunctionInfo:
         self.body = body
         self.language = language
         self.class_name = class_name
+        # Position among the indexed functions sharing this qualified_name in
+        # this file, in source order. Assigned by CodeIndex.build.
+        self.occurrence = occurrence
 
     @property
     def qualified_name(self) -> str:
         if self.class_name:
             return f"{self.class_name}.{self.name}"
         return self.name
+
+    @property
+    def unique_name(self) -> str:
+        """The name that identifies this function within its file.
+
+        Everything downstream of the index — the detector's processed marker,
+        the finding fingerprint, the triager's body lookup — keys on a name
+        rather than on an index key, so a name that repeats within one file
+        makes those layers merge functions the index keeps apart. The
+        occurrence index is used rather than start_line because a fingerprint
+        has to stay stable when unrelated lines above a function change
+        (Constitution VIII), and because it leaves the first occurrence's name
+        untouched, so markers and fingerprints written before this existed
+        still match.
+        """
+        if self.occurrence:
+            return f"{self.qualified_name}{OCCURRENCE_SEP}{self.occurrence}"
+        return self.qualified_name
 
     @property
     def key(self) -> str:
@@ -376,12 +419,14 @@ class FunctionInfo:
         return {
             "name": self.name,
             "qualified_name": self.qualified_name,
+            "unique_name": self.unique_name,
             "file_path": self.file_path,
             "start_line": self.start_line,
             "end_line": self.end_line,
             "body": self.body,
             "language": self.language,
             "class_name": self.class_name,
+            "occurrence": self.occurrence,
         }
 
 
@@ -779,10 +824,15 @@ class CodeIndex:
                 # Remove old entries for this file before adding new ones
                 self._remove_file(file_path)
 
+                # Number same-named functions in source order so every layer
+                # downstream of the index can tell them apart by name.
+                occurrences: Dict[str, int] = defaultdict(int)
                 for func in functions:
                     if _body_line_count(func.body) < self.min_function_lines:
                         stats["functions_skipped_trivial"] += 1
                         continue
+                    func.occurrence = occurrences[func.qualified_name]
+                    occurrences[func.qualified_name] += 1
                     self._functions[func.key] = func
                     self._by_name[func.name].append(func.key)
                     self._by_file[file_path].append(func.key)
@@ -904,13 +954,24 @@ class CodeIndex:
 
     # --- Query interface (FR-022) ---
 
-    def get_function_body(self, file_path: str, function_name: str) -> Optional[str]:
-        """Get the body of a specific function."""
+    def _resolve(self, file_path: str, function_name: str) -> Optional[FunctionInfo]:
+        """Find the function a name refers to within one file.
+
+        unique_name is matched too, so a caller holding a discriminated name
+        ("renderCell#1") reaches that exact function instead of the first
+        same-named one. A plain name still resolves to the first occurrence,
+        whose unique_name is the plain name.
+        """
         for key in self._by_file.get(file_path, []):
             func = self._functions.get(key)
-            if func and function_name in (func.name, func.qualified_name):
-                return func.body
+            if func and function_name in (func.name, func.qualified_name, func.unique_name):
+                return func
         return None
+
+    def get_function_body(self, file_path: str, function_name: str) -> Optional[str]:
+        """Get the body of a specific function."""
+        func = self._resolve(file_path, function_name)
+        return func.body if func else None
 
     def get_callers(self, function_name: str) -> List[Dict[str, Any]]:
         """Get all functions that call the given function (FR-021)."""
@@ -924,11 +985,8 @@ class CodeIndex:
 
     def get_callees(self, file_path: str, function_name: str) -> List[str]:
         """Get all functions called by the given function (FR-021)."""
-        for key in self._by_file.get(file_path, []):
-            func = self._functions.get(key)
-            if func and function_name in (func.name, func.qualified_name):
-                return sorted(self._callees.get(key, set()))
-        return []
+        func = self._resolve(file_path, function_name)
+        return sorted(self._callees.get(func.key, set())) if func else []
 
     def find_symbol(self, name: str) -> List[Dict[str, Any]]:
         """Find all functions/methods with the given name (FR-022)."""
@@ -978,6 +1036,7 @@ class CodeIndex:
         Uses write-to-temp-then-rename for atomic persistence (Constitution XI).
         """
         data = {
+            "key_format_version": INDEX_KEY_FORMAT_VERSION,
             "functions": {k: v.to_dict() for k, v in self._functions.items()},
             "callees": {k: sorted(v) for k, v in self._callees.items()},
             "callers": {k: sorted(v) for k, v in self._callers.items()},
@@ -997,10 +1056,24 @@ class CodeIndex:
             with open(path, "r") as f:
                 data = json.load(f)
 
+            # An index saved under an older key format is not reusable: its
+            # file hashes would mark every source file unchanged, so the
+            # collided entries it holds would survive a re-scan untouched and
+            # silently undo the fixes that changed how keys are built.
+            saved_version = data.get("key_format_version")
+            if saved_version != INDEX_KEY_FORMAT_VERSION:
+                logger.info(
+                    "Index at %s has key format %s, current is %d — discarding it and "
+                    "rebuilding from source (this scan's indexing phase will be slower)",
+                    path, saved_version if saved_version is not None else "unstamped",
+                    INDEX_KEY_FORMAT_VERSION)
+                return False
+
             self._functions = {}
             for key, fdict in data.get("functions", {}).items():
-                self._functions[key] = FunctionInfo(**{k: v for k, v in fdict.items()
-                                                       if k != "qualified_name"})
+                self._functions[key] = FunctionInfo(
+                    **{k: v for k, v in fdict.items()
+                       if k not in ("qualified_name", "unique_name")})
                 self._by_name[fdict["name"]].append(key)
                 self._by_file[fdict["file_path"]].append(key)
 

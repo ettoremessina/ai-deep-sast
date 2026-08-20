@@ -275,8 +275,11 @@ class Orchestrator:
         # Try to load existing index for incremental
         index_path = os.path.join(self.output_dir, "deepscan_index.json")
         if os.path.exists(index_path):
-            self.index.load(index_path)
-            logger.info("Loaded existing index from %s", index_path)
+            # load() refuses an index saved under an older key format and says
+            # so; build() then re-parses everything rather than trusting the
+            # stale file hashes it would otherwise have carried over.
+            if self.index.load(index_path):
+                logger.info("Loaded existing index from %s", index_path)
 
         return self.index.build(self.target)
 

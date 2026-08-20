@@ -145,7 +145,16 @@ CREATE TABLE IF NOT EXISTS processed_functions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_processed_file ON processed_functions(file_path);
+
+CREATE TABLE IF NOT EXISTS store_meta (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
 """
+
+# Bumped when the shape of the function_name recorded in markers and findings
+# changes. Version 2 added the occurrence discriminator (FunctionInfo.unique_name).
+FUNCTION_KEY_FORMAT_VERSION = 2
 
 
 # --- Fingerprinting (FR-090) ---
@@ -187,6 +196,53 @@ class FindingStore:
         """Create tables if they don't exist."""
         with self._connect() as conn:
             conn.executescript(_SCHEMA_SQL)
+        self._stamp_function_key_format()
+
+    def _stamp_function_key_format(self) -> None:
+        """Record the function-name format, warning when upgrading an old store.
+
+        Function names now carry an occurrence discriminator for same-named
+        functions in one file. First occurrences are unaffected — their
+        unique_name is still the bare qualified name — so every marker and
+        fingerprint an older database holds keeps resuming and deduplicating
+        exactly as before. Later occurrences never had markers of their own
+        (they were skipped as already-processed), so a resumed scan analyses
+        them for the first time; if one reports a vulnerability the old
+        database already recorded under the undiscriminated name, that arrives
+        as a second finding. It is a one-off per affected function, and the
+        operator is told rather than left to find it in DefectDojo.
+        """
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT value FROM store_meta WHERE key = 'function_key_format'"
+            ).fetchone()
+            if row and row[0] == str(FUNCTION_KEY_FORMAT_VERSION):
+                return
+
+            has_history = conn.execute(
+                "SELECT 1 FROM processed_functions LIMIT 1").fetchone() is not None
+            if row is None and has_history:
+                logger.warning(
+                    "Store %s predates occurrence-discriminated function names. "
+                    "Functions sharing a name within one file were never analysed "
+                    "separately before, so resuming re-analyses them and can report a "
+                    "second finding for one this store already holds under the "
+                    "undiscriminated name. Delete the store for a clean full scan.",
+                    self.db_path)
+
+            conn.execute(
+                """INSERT OR REPLACE INTO store_meta (key, value)
+                   VALUES ('function_key_format', ?)""",
+                (str(FUNCTION_KEY_FORMAT_VERSION),)
+            )
+
+    def function_key_format(self) -> Optional[int]:
+        """The function-name format version recorded in this store."""
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT value FROM store_meta WHERE key = 'function_key_format'"
+            ).fetchone()
+            return int(row[0]) if row else None
 
     @contextmanager
     def _connect(self):

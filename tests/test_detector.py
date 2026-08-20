@@ -371,3 +371,142 @@ class TestFrontendPromptCoverage:
     def test_exploratory_prompt_frontend_flaw_precedes_closing_instruction(self):
         assert EXPLORATORY_SYSTEM_PROMPT.index("Client-side-only authorisation") < \
             EXPLORATORY_SYSTEM_PROMPT.rindex("Respond ONLY")
+
+
+# --- Same-named functions in one file (whole-branch review, Finding 1) ---
+
+GRID_TSX_SAMPLE = '''\
+export const getColumns = () => [
+    {
+        field: "a",
+        renderCell: (p) => {
+            const safe = escapeHtml(p.a);
+            logRender(safe);
+            return <span>{safe}</span>;
+        },
+    },
+    {
+        field: "z",
+        renderCell: (p) => {
+            const raw = p.z;
+            logRender(raw);
+            return <span dangerouslySetInnerHTML={{__html: raw}} />;
+        },
+    },
+];
+'''
+
+XSS_FINDING = json.dumps([{
+    "vulnerability_class": "xss",
+    "description": "Unescaped value rendered via dangerouslySetInnerHTML",
+    "cwe": "CWE-79",
+    "severity_tier": "ERROR",
+    "severity_cvss": 7.5,
+}])
+
+
+@pytest.fixture
+def grid_index(tmp_path):
+    f = tmp_path / "grid.tsx"
+    f.write_text(GRID_TSX_SAMPLE)
+    # min_function_lines=1: the subject is per-function identity, not the
+    # trivial-skip threshold.
+    idx = CodeIndex(min_function_lines=1)
+    idx.build(str(f))
+    return idx
+
+
+class TestSameNamedFunctions:
+    """
+    Two renderCell callbacks in one grid.tsx are distinct units in the index,
+    and the detector has to keep them distinct too: the processed-marker and
+    the finding fingerprint both keyed on (file, qualified_name), so the
+    second one was skipped as 'already processed' and any finding it did
+    produce collapsed onto the first one's fingerprint.
+    """
+
+    def test_every_same_named_function_reaches_the_llm(self, mock_llm, store, grid_index):
+        mock_llm.chat.return_value = ("[]", {"input_tokens": 50, "output_tokens": 5})
+        detector = Detector(mock_llm, grid_index, store)
+
+        stats = detector.run_rule_based()
+        assert stats["functions_analysed"] == 3
+        assert stats["resumed_skipped"] == 0
+        assert mock_llm.chat.call_count == 3
+
+    def test_the_vulnerable_duplicate_is_actually_sent(self, mock_llm, store, grid_index):
+        mock_llm.chat.return_value = ("[]", {"input_tokens": 50, "output_tokens": 5})
+        Detector(mock_llm, grid_index, store).run_rule_based()
+
+        # Both renderCell callbacks must arrive as units of their own. The
+        # enclosing getColumns body happens to quote the vulnerable line too,
+        # so a bare substring check over all prompts proves nothing.
+        prompts = [call[0][1] for call in mock_llm.chat.call_args_list]
+        render_prompts = [p for p in prompts if "## Function: getColumns.renderCell" in p]
+        assert len(render_prompts) == 2
+        assert sum("dangerouslySetInnerHTML" in p for p in render_prompts) == 1
+
+    def test_each_duplicate_is_prompted_with_its_own_callees(self, mock_llm, store, tmp_path):
+        # get_callees resolved by plain name and returned the first match, so
+        # the second duplicate would be described to the LLM with the first
+        # one's call graph.
+        f = tmp_path / "dup.py"
+        f.write_text(
+            "def fetch(url):\n"
+            "    a = first_helper(url)\n"
+            "    log(a)\n"
+            "    return a\n"
+            "\n\n"
+            "def fetch(url):\n"
+            "    b = second_helper(url)\n"
+            "    log(b)\n"
+            "    return b\n"
+        )
+        idx = CodeIndex(min_function_lines=1)
+        idx.build(str(f))
+        mock_llm.chat.return_value = ("[]", {"input_tokens": 50, "output_tokens": 5})
+        Detector(mock_llm, idx, store).run_rule_based()
+
+        prompts = [call[0][1] for call in mock_llm.chat.call_args_list]
+        second = next(p for p in prompts if "second_helper(url)" in p)
+        assert "- second_helper" in second
+        assert "- first_helper" not in second
+
+    def test_findings_from_same_named_functions_do_not_collapse(self, mock_llm, store, grid_index):
+        mock_llm.chat.return_value = (XSS_FINDING, {"input_tokens": 100, "output_tokens": 50})
+        detector = Detector(mock_llm, grid_index, store)
+
+        stats = detector.run_rule_based()
+        assert stats["candidates_created"] == 3
+        assert stats["duplicates_skipped"] == 0
+
+        findings = store.get_findings()
+        assert len({f["fingerprint"] for f in findings}) == 3
+        assert len({f["function_name"] for f in findings}) == 3
+
+    def test_fingerprints_are_stable_across_a_rescan_of_unchanged_code(
+            self, mock_llm, store, grid_index, tmp_path):
+        # DefectDojo tracks findings by fingerprint. An identity that shifts
+        # when nothing changed turns every import into a fresh duplicate.
+        mock_llm.chat.return_value = (XSS_FINDING, {"input_tokens": 100, "output_tokens": 50})
+        Detector(mock_llm, grid_index, store).run_rule_based()
+        first = {f["fingerprint"] for f in store.get_findings()}
+
+        rebuilt = CodeIndex(min_function_lines=1)
+        rebuilt.build(str(tmp_path / "grid.tsx"))
+        other_store = FindingStore(db_path=str(tmp_path / "second.db"))
+        Detector(mock_llm, rebuilt, other_store).run_rule_based()
+        second = {f["fingerprint"] for f in other_store.get_findings()}
+
+        assert first == second
+
+    def test_second_scan_into_the_same_store_adds_nothing(self, mock_llm, store, grid_index):
+        mock_llm.chat.return_value = (XSS_FINDING, {"input_tokens": 100, "output_tokens": 50})
+        detector = Detector(mock_llm, grid_index, store)
+        detector.run_rule_based()
+        before = len(store.get_findings())
+
+        stats = detector.run_rule_based()
+        assert stats["resumed_skipped"] == 3
+        assert stats["candidates_created"] == 0
+        assert len(store.get_findings()) == before

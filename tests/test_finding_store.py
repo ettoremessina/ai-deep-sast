@@ -17,12 +17,15 @@
 """Tests for the finding store and work queue."""
 
 import json
+import logging
 import os
+import sqlite3
 import tempfile
 
 import pytest
 
 from finding_store import (
+    FUNCTION_KEY_FORMAT_VERSION,
     FindingState,
     FindingStore,
     TaskState,
@@ -458,3 +461,49 @@ class TestExport:
         assert summary["tasks"]["open"] == 1
         assert summary["coverage"]["total"] == 1
         assert summary["rule_gaps"] == 0
+
+
+# --- Resume compatibility with pre-discriminator databases (Finding 1) ---
+
+class TestFunctionKeyFormat:
+    """
+    Function names recorded in the store now carry an occurrence
+    discriminator for same-named functions in one file. Databases written
+    before that never held markers for those duplicates, so a resumed scan
+    analyses them for the first time and can report a finding the database
+    already holds under the undiscriminated name. That is acceptable, but it
+    must not be silent.
+    """
+
+    def test_new_store_is_stamped_with_the_current_format(self, tmp_path):
+        store = FindingStore(db_path=str(tmp_path / "fresh.db"))
+        assert store.function_key_format() == FUNCTION_KEY_FORMAT_VERSION
+
+    def test_reopening_an_unstamped_store_with_history_warns(self, tmp_path, caplog):
+        db_path = str(tmp_path / "legacy.db")
+        store = FindingStore(db_path=db_path)
+        store.mark_function_processed("app.py", "handle_login")
+        with sqlite3.connect(db_path) as conn:
+            conn.execute("DELETE FROM store_meta WHERE key = 'function_key_format'")
+
+        with caplog.at_level(logging.WARNING):
+            reopened = FindingStore(db_path=db_path)
+        assert "predates" in caplog.text
+        assert reopened.function_key_format() == FUNCTION_KEY_FORMAT_VERSION
+
+    def test_reopening_an_empty_unstamped_store_is_quiet(self, tmp_path, caplog):
+        db_path = str(tmp_path / "empty.db")
+        FindingStore(db_path=db_path)
+        with sqlite3.connect(db_path) as conn:
+            conn.execute("DELETE FROM store_meta WHERE key = 'function_key_format'")
+
+        with caplog.at_level(logging.WARNING):
+            FindingStore(db_path=db_path)
+        assert "predates" not in caplog.text
+
+    def test_markers_for_first_occurrences_survive_the_upgrade(self, tmp_path):
+        # unique_name equals qualified_name for the first function of a name,
+        # so everything an old database already recorded still resumes.
+        db_path = str(tmp_path / "resume.db")
+        FindingStore(db_path=db_path).mark_function_processed("app.py", "handle_login")
+        assert FindingStore(db_path=db_path).is_function_processed("app.py", "handle_login")

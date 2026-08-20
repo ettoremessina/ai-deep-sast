@@ -42,7 +42,7 @@ import logging
 from typing import Any, Dict, List, Optional, Tuple
 
 from finding_store import FindingStore, FindingState, Verdict
-from indexer import CodeIndex
+from indexer import CodeIndex, strip_occurrence
 from llm_client import LLMClient
 from redactor import redact_secrets_in_text, verify_no_secrets
 
@@ -216,8 +216,12 @@ class Triager:
 
         # Get function body
         if func_name and file_path:
-            # Try with just the function name (without class prefix)
-            simple_name = func_name.split(".")[-1] if "." in func_name else func_name
+            # func_name can carry an occurrence discriminator ("renderCell#1")
+            # so it names one of several same-named functions in the file.
+            # The index resolves it; the call graph, keyed by plain callee
+            # names, needs it stripped first.
+            base_name = strip_occurrence(func_name)
+            simple_name = base_name.split(".")[-1] if "." in base_name else base_name
             body = self.index.get_function_body(file_path, func_name)
             if not body:
                 body = self.index.get_function_body(file_path, simple_name)
@@ -241,7 +245,8 @@ class Triager:
                     parts.append(f"\n### Callers:\n" + "\n".join(caller_bodies))
 
             # Get callees
-            callees = self.index.get_callees(file_path, simple_name)
+            callees = (self.index.get_callees(file_path, func_name)
+                       or self.index.get_callees(file_path, simple_name))
             if callees:
                 callee_bodies = []
                 for callee_name in callees[:5]:

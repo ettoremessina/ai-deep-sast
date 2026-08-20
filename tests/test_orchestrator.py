@@ -17,7 +17,9 @@
 """Tests for the deep scan Orchestrator and standalone CLI."""
 
 import json
+import logging
 import os
+import sqlite3
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -314,3 +316,34 @@ class TestJsonSummary:
         assert "success" in results
         assert "elapsed_seconds" in results
         assert isinstance(results["elapsed_seconds"], float)
+
+
+# --- Stale index files (whole-branch review, Finding 4) ---
+
+class TestIndexFormatVersion:
+    """
+    A persisted index written before the key-format change holds collided
+    entries. Loading it and finding every hash unchanged reports
+    `files_parsed: 0` and keeps the collisions, silently disabling the
+    branch's fixes for anyone re-running against an existing reports dir.
+    """
+
+    def test_unstamped_index_file_forces_a_full_rebuild(self, scan_dir, output_dir, caplog):
+        Orchestrator(target=scan_dir, output_dir=output_dir, dry_run=True).run()
+        index_path = os.path.join(output_dir, "deepscan_index.json")
+        with open(index_path) as handle:
+            data = json.load(handle)
+        del data["key_format_version"]
+        with open(index_path, "w") as handle:
+            json.dump(data, handle)
+
+        with caplog.at_level(logging.INFO):
+            result = Orchestrator(target=scan_dir, output_dir=output_dir, dry_run=True).run()
+        assert result["phases"]["index"]["files_parsed"] == 2
+        assert result["phases"]["index"]["files_skipped"] == 0
+        assert "rebuilding" in caplog.text.lower()
+
+    def test_current_index_file_is_still_reused(self, scan_dir, output_dir):
+        Orchestrator(target=scan_dir, output_dir=output_dir, dry_run=True).run()
+        result = Orchestrator(target=scan_dir, output_dir=output_dir, dry_run=True).run()
+        assert result["phases"]["index"]["files_skipped"] == 2

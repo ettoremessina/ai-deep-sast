@@ -43,6 +43,18 @@ from rule_matcher import RuleMatcher, MatchResult
 
 logger = logging.getLogger(__name__)
 
+
+def _identity(func: Dict[str, Any]) -> str:
+    """The name that identifies one indexed unit inside its file.
+
+    Both the processed marker and the finding fingerprint are keyed on this,
+    so it has to be unique per unit within a file — see
+    FunctionInfo.unique_name. The fallbacks cover function dicts that did not
+    come from the index (Semgrep groups, exploratory candidates).
+    """
+    return func.get("unique_name") or func.get("qualified_name") or func.get("name", "")
+
+
 # --- Prompts ---
 
 RULE_BASED_SYSTEM_PROMPT = """\
@@ -186,7 +198,12 @@ class Detector:
         max_consecutive_auth_errors = 3
 
         for func in functions:
-            func_name = func.get("qualified_name") or func.get("name")
+            # unique_name, not qualified_name: the index keeps two renderCell
+            # callbacks in one grid.tsx apart, but a marker keyed on the name
+            # they share makes the second one look already-processed and drops
+            # it, and any finding it produced would collapse onto the first
+            # one's fingerprint.
+            func_name = _identity(func)
             if self.store.is_function_processed(func["file_path"], func_name):
                 stats["resumed_skipped"] += 1
                 continue
@@ -258,7 +275,7 @@ class Detector:
             logger.info("Resume: %d functions already processed, skipping them", already_done)
 
         for func in functions:
-            func_name = func.get("qualified_name") or func.get("name")
+            func_name = _identity(func)
             if self.store.is_function_processed(func["file_path"], func_name):
                 stats["resumed_skipped"] += 1
                 continue
@@ -315,7 +332,7 @@ class Detector:
         body = func.get("body", "")
 
         callers = self.index.get_callers(func_name)
-        callees = self.index.get_callees(file_path, func_name)
+        callees = self.index.get_callees(file_path, _identity(func))
 
         # Build guided prompt with matched rules
         guided_rules = self.rule_matcher.build_guided_prompt(match_result)
@@ -525,7 +542,7 @@ class Detector:
             start = func.get("start_line", 0)
             end = func.get("end_line", 0)
             if start <= line <= end:
-                return func.get("qualified_name") or func.get("name")
+                return _identity(func)
         return None
 
     def run_exploratory(self, focus_areas: Optional[List[str]] = None) -> Dict[str, Any]:
@@ -613,11 +630,14 @@ class Detector:
         file_path = func.get("file_path", "")
         body = func.get("body", "")
 
+        # Callers are keyed by the plain callee name; callees have to be looked
+        # up by the unique name or the second of two same-named functions is
+        # described to the LLM with the first one's call graph.
         callers = self.index.get_callers(func_name)
-        callees = self.index.get_callees(file_path, func_name)
+        callees = self.index.get_callees(file_path, _identity(func))
 
         context_parts = [
-            f"## Function: {func.get('qualified_name', func_name)}",
+            f"## Function: {_identity(func) or func_name}",
             f"File: {file_path}",
             f"Lines: {func.get('start_line')}-{func.get('end_line')}",
             f"\n### Function Body:\n```\n{body}\n```",
