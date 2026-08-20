@@ -341,3 +341,21 @@ class TestBatching:
         batches = detector._create_exploration_batches(functions, focus_areas=["auth"])
         total_funcs = sum(len(b) for b in batches)
         assert total_funcs == 1
+
+
+# --- Frontend prompt coverage ---
+
+class TestFrontendPromptCoverage:
+    """The brute-force prompts must name the React/Vite classes we scan for."""
+
+    @pytest.mark.parametrize("needle", [
+        "dangerouslySetInnerHTML",
+        "javascript:",
+        "localStorage",
+        "import.meta.env",
+    ])
+    def test_rule_based_prompt_mentions(self, needle):
+        assert needle in RULE_BASED_SYSTEM_PROMPT
+
+    def test_exploratory_prompt_mentions_client_side_authorisation(self):
+        assert "client-side" in EXPLORATORY_SYSTEM_PROMPT.lower()

@@ -57,6 +57,15 @@ with a JSON array of findings. Each finding must have:
 - "severity_tier": one of "INFO", "WARNING", "ERROR"
 - "severity_cvss": estimated CVSS v3.1 score (0.0-10.0)
 
+When the code is a browser front end, also consider:
+- dangerouslySetInnerHTML, innerHTML or document.write reached by non-constant input
+- javascript: or data: URLs flowing into href, src or window.open
+- tokens, credentials or personal data written to localStorage or sessionStorage
+- secrets read from import.meta.env: every VITE_-prefixed variable is inlined into \
+the client bundle and is readable by any visitor
+- authorisation decided only in the browser, with no server-side check
+- postMessage handlers that do not verify event.origin
+
 If no vulnerabilities are found, respond with an empty JSON array: []
 
 Respond ONLY with the JSON array, no other text.
@@ -116,6 +125,8 @@ Look for design-level security flaws that pattern-matching rules would miss:
 - Insecure data flows across trust boundaries
 - Missing input validation at trust boundary crossings
 - Privilege escalation paths
+- Client-side-only authorisation: route guards or UI gating with no server check
+- Trust placed in build-time configuration that ships to the browser
 
 For each vulnerability found, respond with a JSON array of findings. Each finding must have:
 - "function_name": the function where the vulnerability manifests
