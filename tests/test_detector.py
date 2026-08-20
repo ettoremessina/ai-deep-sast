@@ -510,3 +510,51 @@ class TestSameNamedFunctions:
         assert stats["resumed_skipped"] == 3
         assert stats["candidates_created"] == 0
         assert len(store.get_findings()) == before
+
+
+# --- Semgrep-guided lookup ---
+
+# Two top-level functions with the same name, NOT nested: this is what makes
+# _find_function_at_line return a discriminated unique_name ("fetch#1") rather
+# than an enclosing function's plain name.
+TWO_TOP_LEVEL_SAME_NAME = '''\
+def fetch(url):
+    first = 1
+    other = 2
+    return first + other
+
+
+def fetch(url):
+    danger = url
+    marker = "SECOND_BODY"
+    return danger + marker
+'''
+
+
+class TestSemgrepFunctionLookup:
+    """A Semgrep hit must reach the function it landed in, not the first namesake."""
+
+    def test_second_same_named_function_gets_its_own_body(self, mock_llm, store, tmp_path):
+        f = tmp_path / "dup.py"
+        f.write_text(TWO_TOP_LEVEL_SAME_NAME)
+        idx = CodeIndex(min_function_lines=1)
+        idx.build(str(f))
+
+        fetches = [fn for fn in idx.list_functions_in_file(str(f)) if fn["name"] == "fetch"]
+        assert len(fetches) == 2, "fixture must produce two same-named top-level functions"
+        second = max(fetches, key=lambda fn: fn["start_line"])
+        assert "#" in second["unique_name"], "the second must carry a discriminator"
+
+        det = Detector(mock_llm, idx, store)
+        mock_llm.chat.return_value = ("[]", {"input_tokens": 10, "output_tokens": 5})
+        det.run_semgrep_guided([{
+            "path": str(f),
+            "check_id": "test.rule",
+            "start": {"line": second["start_line"] + 2},
+            "end": {"line": second["start_line"] + 2},
+            "extra": {"severity": "ERROR", "message": "test"},
+        }])
+
+        sent = mock_llm.chat.call_args[0][1]
+        assert "Function body not available" not in sent
+        assert "SECOND_BODY" in sent, "the hit function's own body must be sent"

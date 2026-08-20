@@ -455,7 +455,11 @@ class Detector:
         if func_name:
             funcs = self.index.list_functions_in_file(file_path)
             for f in funcs:
-                if f.get("name") == func_name or f.get("qualified_name") == func_name:
+                # unique_name too: _find_function_at_line reports a discriminated
+                # name ("fetch#1") for a second same-named function, which matches
+                # neither of the other two.
+                if func_name in (f.get("name"), f.get("qualified_name"),
+                                 f.get("unique_name")):
                     func = f
                     break
 
