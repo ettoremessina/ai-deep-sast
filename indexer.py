@@ -227,6 +227,18 @@ _COMMENT = re.compile(r"//[^\n]*|/\*.*?\*/", re.DOTALL)
 # files that actually consume the key rather than just where it is defined.
 _ENV_READ = re.compile(r"import\.meta\.env\.([A-Za-z_][A-Za-z0-9_]*)")
 
+# tree-sitter's tsx grammar flags HTML entities in JSX text as errors. They are
+# valid JSX, and the surrounding functions parse fine, so treating them as a
+# partial parse marks complete coverage as incomplete. The grammar reports the
+# error node as the entity *plus* whatever JSX text/punctuation sits next to
+# it (e.g. "&sup2;)"), not the entity alone, so this searches for an entity
+# anywhere in the node's text rather than requiring the whole node to equal
+# one. That is still narrow: it only fires on ERROR nodes tree-sitter itself
+# judged small enough to isolate (see _first_error_node), and genuinely broken
+# code - unbalanced brackets, stray keywords - does not happen to contain an
+# "&name;"-shaped substring, so real syntax errors still get reported.
+_HTML_ENTITY = re.compile(r"&(#[0-9]+|#x[0-9A-Fa-f]+|[A-Za-z][A-Za-z0-9]*);")
+
 # Import and re-export statements, matched over the whole text rather than
 # line by line: Prettier's default formatting wraps a grouped export across
 # several lines (`export {\n    Foo,\n    Bar,\n} from './x';`), and a
@@ -358,7 +370,9 @@ class TreeSitterParser:
 
         tree = parser.parse(source)
         if tree.root_node.has_error:
-            self._record_syntax_error(file_path, tree.root_node, lang_name)
+            first_error = self._first_error_node(tree.root_node)
+            if not self._is_html_entity_error(first_error, source):
+                self._record_syntax_error(file_path, tree.root_node, lang_name)
         functions = self._extract_functions(tree.root_node, file_path, source, lang_name)
         calls = self._extract_calls(tree.root_node, file_path, source, lang_name, functions)
         return functions, calls
@@ -384,6 +398,15 @@ class TreeSitterParser:
             if node.has_error:
                 stack.extend(reversed(node.children))
         return None
+
+    @staticmethod
+    def _is_html_entity_error(error_node, source: bytes) -> bool:
+        """True when the only parse error is an HTML entity in JSX text."""
+        if error_node is None:
+            return False
+        text = source[error_node.start_byte:error_node.end_byte].decode(
+            "utf-8", errors="replace").strip()
+        return bool(_HTML_ENTITY.search(text))
 
     def _extract_functions(self, root_node, file_path: str, source: bytes,
                            lang_name: str) -> List[FunctionInfo]:

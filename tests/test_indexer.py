@@ -943,3 +943,26 @@ def test_import_meta_env_reads_are_collected(tmp_path):
     reads = idx.get_env_reads()
     assert sorted(reads) == ["VITE_API_URL", "VITE_CLIENT_ID"]
     assert reads["VITE_API_URL"] == [str(tmp_path / "config.ts")]
+
+
+def test_html_entity_in_jsx_is_not_a_partial_parse(tmp_path):
+    f = tmp_path / "label.tsx"
+    f.write_text(
+        "export function AreaLabel() {\n"
+        "    return <>Area (mm&sup2;)</>;\n"
+        "}\n"
+    )
+    # min_function_lines=1: this is a 1-line body by design, testing entity
+    # handling in isolation from the unrelated trivial-function-skip feature.
+    idx = CodeIndex(min_function_lines=1)
+    stats = idx.build(str(f))
+    assert [fn["name"] for fn in idx.get_all_functions()] == ["AreaLabel"]
+    assert stats["files_with_syntax_errors"] == 0
+
+
+def test_genuinely_broken_file_still_reports(tmp_path):
+    f = tmp_path / "broken.tsx"
+    f.write_text("export function A() { return <div>; }\nfunction (((\n")
+    idx = CodeIndex()
+    stats = idx.build(str(f))
+    assert stats["files_with_syntax_errors"] == 1
