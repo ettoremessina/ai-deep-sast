@@ -966,3 +966,41 @@ def test_genuinely_broken_file_still_reports(tmp_path):
     idx = CodeIndex()
     stats = idx.build(str(f))
     assert stats["files_with_syntax_errors"] == 1
+
+
+def test_entity_plus_unrelated_broken_function_still_reports(tmp_path):
+    # A valid entity in one function must not exonerate a real syntax error
+    # in an unrelated function later in the same file. _first_error_node
+    # returns only the first error in DFS order, and the entity sits before
+    # the real break here, so a check that only inspects that first node
+    # would wrongly clear the whole file.
+    f = tmp_path / "mixed.tsx"
+    f.write_text(
+        "export function AreaLabel() {\n"
+        "    return <>Area (mm&sup2;)</>;\n"
+        "}\n"
+        "\n"
+        "export function A() { return <div>; }\n"
+        "function (((\n"
+    )
+    idx = CodeIndex()
+    stats = idx.build(str(f))
+    assert stats["files_with_syntax_errors"] == 1
+
+
+def test_unbalanced_construct_before_entity_still_reports(tmp_path):
+    # tree-sitter can merge an unrecoverable region into one ERROR node that
+    # spans from a stray paren through a later, otherwise-valid entity. The
+    # node's text then *contains* an entity even though the entity is not
+    # the defect - a check that greps the node's text for an entity shape
+    # would wrongly clear the file.
+    f = tmp_path / "unbalanced.tsx"
+    f.write_text(
+        "function (((\n"
+        "export function AreaLabel() {\n"
+        "    return <>Area (mm&sup2;)</>;\n"
+        "}\n"
+    )
+    idx = CodeIndex()
+    stats = idx.build(str(f))
+    assert stats["files_with_syntax_errors"] == 1

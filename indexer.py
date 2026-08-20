@@ -227,17 +227,28 @@ _COMMENT = re.compile(r"//[^\n]*|/\*.*?\*/", re.DOTALL)
 # files that actually consume the key rather than just where it is defined.
 _ENV_READ = re.compile(r"import\.meta\.env\.([A-Za-z_][A-Za-z0-9_]*)")
 
-# tree-sitter's tsx grammar flags HTML entities in JSX text as errors. They are
-# valid JSX, and the surrounding functions parse fine, so treating them as a
-# partial parse marks complete coverage as incomplete. The grammar reports the
-# error node as the entity *plus* whatever JSX text/punctuation sits next to
-# it (e.g. "&sup2;)"), not the entity alone, so this searches for an entity
-# anywhere in the node's text rather than requiring the whole node to equal
-# one. That is still narrow: it only fires on ERROR nodes tree-sitter itself
-# judged small enough to isolate (see _first_error_node), and genuinely broken
-# code - unbalanced brackets, stray keywords - does not happen to contain an
-# "&name;"-shaped substring, so real syntax errors still get reported.
-_HTML_ENTITY = re.compile(r"&(#[0-9]+|#x[0-9A-Fa-f]+|[A-Za-z][A-Za-z0-9]*);")
+# tree-sitter's tsx grammar flags HTML entities (e.g. &sup2;) in JSX text as
+# errors even though they are valid JSX. Inferring "entities are the only
+# problem" from a single error node's text does not hold up: two files can
+# merge a real defect and an entity into one ERROR node (an unbalanced paren
+# before the entity swallows both into one node whose text still contains an
+# entity shape), or a real defect can sit later in the tree than the first,
+# entity-only error node, out of view entirely. So this is not decided by
+# inspecting node text at all - see _only_html_entities_cause_errors, which
+# masks every entity in the source and re-parses to test the actual
+# proposition: does the file parse clean once the entities are gone?
+_HTML_ENTITY = re.compile(rb"&(?:#[0-9]+|#x[0-9A-Fa-f]+|[A-Za-z][A-Za-z0-9]*);")
+
+
+def _mask_html_entities(source: bytes) -> bytes:
+    """Replace each HTML entity with same-length filler of plain letters.
+
+    Same length keeps byte offsets stable (nothing currently depends on
+    that, but it costs nothing and avoids surprises); plain letters cannot
+    themselves form a JSX/TS syntax error, so any error left after masking
+    and re-parsing is genuine, not an artifact of the substitution.
+    """
+    return _HTML_ENTITY.sub(lambda m: b"x" * len(m.group(0)), source)
 
 # Import and re-export statements, matched over the whole text rather than
 # line by line: Prettier's default formatting wraps a grouped export across
@@ -370,12 +381,27 @@ class TreeSitterParser:
 
         tree = parser.parse(source)
         if tree.root_node.has_error:
-            first_error = self._first_error_node(tree.root_node)
-            if not self._is_html_entity_error(first_error, source):
+            if not self._only_html_entities_cause_errors(parser, source):
                 self._record_syntax_error(file_path, tree.root_node, lang_name)
         functions = self._extract_functions(tree.root_node, file_path, source, lang_name)
         calls = self._extract_calls(tree.root_node, file_path, source, lang_name, functions)
         return functions, calls
+
+    @staticmethod
+    def _only_html_entities_cause_errors(parser: Parser, source: bytes) -> bool:
+        """True when masking every HTML entity and re-parsing removes all errors.
+
+        Only ever called once the unmasked parse already has_error, and costs
+        one extra parse on exactly those files. It tests the proposition the
+        warning cares about - "entities were the only problem" - directly,
+        instead of inferring it from one error node's text, which breaks once
+        a real defect shares a merged ERROR node with an entity, or sits
+        elsewhere in the tree than the first error found.
+        """
+        masked = _mask_html_entities(source)
+        if masked == source:
+            return False  # no entities present; nothing to exonerate
+        return not parser.parse(masked).root_node.has_error
 
     def _record_syntax_error(self, file_path: str, root_node, lang_name: str) -> None:
         """Log a partial parse and remember the file (FR-028)."""
@@ -398,15 +424,6 @@ class TreeSitterParser:
             if node.has_error:
                 stack.extend(reversed(node.children))
         return None
-
-    @staticmethod
-    def _is_html_entity_error(error_node, source: bytes) -> bool:
-        """True when the only parse error is an HTML entity in JSX text."""
-        if error_node is None:
-            return False
-        text = source[error_node.start_byte:error_node.end_byte].decode(
-            "utf-8", errors="replace").strip()
-        return bool(_HTML_ENTITY.search(text))
 
     def _extract_functions(self, root_node, file_path: str, source: bytes,
                            lang_name: str) -> List[FunctionInfo]:
