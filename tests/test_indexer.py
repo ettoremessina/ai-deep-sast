@@ -1004,3 +1004,16 @@ def test_unbalanced_construct_before_entity_still_reports(tmp_path):
     idx = CodeIndex()
     stats = idx.build(str(f))
     assert stats["files_with_syntax_errors"] == 1
+
+
+def test_entity_shaped_text_outside_jsx_still_reports(tmp_path):
+    # "&bar;" here sits in an object literal, not JSX text - masking it
+    # blindly turns `{ a: 1, &bar; }` into the valid-looking `{ a: 1, xxxxx }`
+    # (a shorthand property), which would wrongly exonerate a real defect.
+    # The entity must not be masked because ',' (skipping the space) cannot
+    # introduce JSX text.
+    f = tmp_path / "not_jsx.ts"
+    f.write_text("const obj = { a: 1, &bar; };\n")
+    idx = CodeIndex()
+    stats = idx.build(str(f))
+    assert stats["files_with_syntax_errors"] == 1

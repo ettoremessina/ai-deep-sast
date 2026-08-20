@@ -235,20 +235,67 @@ _ENV_READ = re.compile(r"import\.meta\.env\.([A-Za-z_][A-Za-z0-9_]*)")
 # entity shape), or a real defect can sit later in the tree than the first,
 # entity-only error node, out of view entirely. So this is not decided by
 # inspecting node text at all - see _only_html_entities_cause_errors, which
-# masks every entity in the source and re-parses to test the actual
-# proposition: does the file parse clean once the entities are gone?
+# masks entities plausibly sitting in JSX text and re-parses to test the
+# actual proposition: does the file parse clean once those entities are gone?
 _HTML_ENTITY = re.compile(rb"&(?:#[0-9]+|#x[0-9A-Fa-f]+|[A-Za-z][A-Za-z0-9]*);")
+
+# Tokens that only ever appear in JS/TS expression position and can never be
+# immediately followed by JSX text - so an entity right after one of these
+# (skipping whitespace) is not a JSX entity at all, e.g. the '&bar;' in
+# `{ a: 1, &bar; }` sits right after a ',' and is genuinely broken syntax,
+# not an entity that masking should paper over. This is a blacklist, not a
+# whitelist: JSX text is legitimately preceded by ordinary letters/digits
+# ("mm&sup2;"), the '>' that opens an element's children ("<div>&nbsp;"),
+# another entity right before it (entities chain: "&#8315;&sup1;"), or
+# nothing (start of file) - none of those are excluded here.
+_JSX_TEXT_BREAKING_BYTES = frozenset(b"{(,=:;+-*/%<!?&|^~[.")
+
+
+def _entity_follows_jsx_text_context(source: bytes, start: int) -> bool:
+    """True unless the entity at `start` sits right after a JS/TS-only token.
+
+    Whitespace is skipped when looking backward: JSX text can contain
+    arbitrary whitespace before an entity ("foo  &nbsp;"), so what matters is
+    the nearest non-whitespace token, not the immediately adjacent byte.
+    """
+    i = start - 1
+    while i >= 0 and bytes([source[i]]).isspace():
+        i -= 1
+    if i < 0:
+        return True  # start of file - only JSX text/expressions start a file
+    return source[i] not in _JSX_TEXT_BREAKING_BYTES
 
 
 def _mask_html_entities(source: bytes) -> bytes:
-    """Replace each HTML entity with same-length filler of plain letters.
+    """Replace each JSX-text-position HTML entity with same-length filler.
 
     Same length keeps byte offsets stable (nothing currently depends on
     that, but it costs nothing and avoids surprises); plain letters cannot
     themselves form a JSX/TS syntax error, so any error left after masking
-    and re-parsing is genuine, not an artifact of the substitution.
+    and re-parsing is genuine, not an artifact of the substitution. Entities
+    that do not plausibly sit in JSX text (see
+    _entity_follows_jsx_text_context) are left untouched, so a real defect
+    written as "&name;"-shaped JS/TS syntax is never masked away.
     """
-    return _HTML_ENTITY.sub(lambda m: b"x" * len(m.group(0)), source)
+    out = bytearray(source)
+    prev_end = None
+    prev_accepted = False
+    for m in _HTML_ENTITY.finditer(source):
+        start, end = m.span()
+        # A chained entity ("&#8315;&sup1;") inherits its predecessor's
+        # verdict rather than being re-checked against the byte right before
+        # it, which would just be the previous entity's trailing ';' - a
+        # JS/TS-only token by itself, but not what actually precedes this
+        # entity in JSX text.
+        if start == prev_end and prev_accepted:
+            accepted = True
+        else:
+            accepted = _entity_follows_jsx_text_context(source, start)
+        if accepted:
+            out[start:end] = b"x" * (end - start)
+        prev_end = end
+        prev_accepted = accepted
+    return bytes(out)
 
 # Import and re-export statements, matched over the whole text rather than
 # line by line: Prettier's default formatting wraps a grouped export across
@@ -389,18 +436,23 @@ class TreeSitterParser:
 
     @staticmethod
     def _only_html_entities_cause_errors(parser: Parser, source: bytes) -> bool:
-        """True when masking every HTML entity and re-parsing removes all errors.
+        """True when masking JSX-text-position HTML entities and re-parsing
+        removes all errors.
 
         Only ever called once the unmasked parse already has_error, and costs
         one extra parse on exactly those files. It tests the proposition the
         warning cares about - "entities were the only problem" - directly,
         instead of inferring it from one error node's text, which breaks once
         a real defect shares a merged ERROR node with an entity, or sits
-        elsewhere in the tree than the first error found.
+        elsewhere in the tree than the first error found. Entities that do
+        not plausibly sit in JSX text are never masked (see
+        _entity_follows_jsx_text_context), so a real defect that merely looks
+        like an entity - "&bar;" inside a broken object literal - still
+        leaves the masked re-parse erroring, and the warning still fires.
         """
         masked = _mask_html_entities(source)
         if masked == source:
-            return False  # no entities present; nothing to exonerate
+            return False  # nothing was masked; nothing to exonerate
         return not parser.parse(masked).root_node.has_error
 
     def _record_syntax_error(self, file_path: str, root_node, lang_name: str) -> None:
