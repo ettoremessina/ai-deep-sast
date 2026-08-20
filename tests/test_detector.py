@@ -359,3 +359,15 @@ class TestFrontendPromptCoverage:
 
     def test_exploratory_prompt_mentions_client_side_authorisation(self):
         assert "client-side" in EXPLORATORY_SYSTEM_PROMPT.lower()
+
+    def test_rule_based_prompt_field_list_precedes_frontend_block(self):
+        assert RULE_BASED_SYSTEM_PROMPT.index("vulnerability_class") < \
+            RULE_BASED_SYSTEM_PROMPT.index("dangerouslySetInnerHTML")
+
+    def test_rule_based_prompt_frontend_block_precedes_closing_instruction(self):
+        assert RULE_BASED_SYSTEM_PROMPT.index("dangerouslySetInnerHTML") < \
+            RULE_BASED_SYSTEM_PROMPT.rindex("Respond ONLY")
+
+    def test_exploratory_prompt_frontend_flaw_precedes_closing_instruction(self):
+        assert EXPLORATORY_SYSTEM_PROMPT.index("Client-side-only authorisation") < \
+            EXPLORATORY_SYSTEM_PROMPT.rindex("Respond ONLY")
