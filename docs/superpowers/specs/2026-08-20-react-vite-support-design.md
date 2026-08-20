@@ -276,11 +276,17 @@ the same reference project used throughout design. Full suite:
 | metric | predicted | measured | match |
 |---|---|---|---|
 | regular (non-whole-file) units | 993 | 993 | exact |
-| whole-file units | 9 | 8 | differs — explained below |
-| total units analysed | 993 + 9 = 1002 | 993 + 8 = 1001 | differs — same cause |
+| whole-file units | 9 | 10 | differs — explained below |
+| total units analysed | 993 + 9 = 1002 | 993 + 10 = 1003 | differs — same causes |
 | trivial functions skipped | 846 | 846 | exact |
 | distinct `VITE_` keys exposed | 6 | 6 | exact |
 | files with syntax errors | 0 | 0 | exact |
+| units skipped inside one run | not predicted | 0 | see "What the whole-branch review caught" |
+
+The whole-file count moved twice: down from the predicted 9 to 8 when a barrel
+file was correctly rejected, then up to 10 when the final review found two more
+files that had been reaching nothing. Both movements are explained below, and
+both are the selection working better rather than differently.
 
 ### Why whole-file units are 8, not 9
 
@@ -383,3 +389,64 @@ count the design called for, and Task 7's fix leaves `files_with_syntax_errors`
 at 0 on a target that exercises the HTML-entity case. The full test suite
 passes at 326, up from the 291 baseline named in the task brief plus the tests
 added across all seven tasks.
+
+## What the whole-branch review caught
+
+Each task was reviewed on its own and passed. Reviewing the seven together found
+one defect that no task-scoped review could have seen, and it was the most
+consequential of the whole effort.
+
+**Section E's fix never reached the LLM.** Making `FunctionInfo.key` unique did
+stop the index dropping functions — 1531 became 1839. But the detector decides
+what to analyse with `is_function_processed(file_path, qualified_name)`, and
+`compute_fingerprint` hashes the same pair. Neither can tell two functions named
+`renderCell` apart. The loss had moved out of the index and into the detector,
+where it was counted as `resumed_skipped` — a statistic whose name suggests
+nothing is wrong.
+
+Measured before the fix: 30 `(file, qualified_name)` pairs held 2–8 units each,
+and **60 of 1001 units were skipped inside a single run**, concentrated in the
+functions most worth reading — `fetchMyAPI` six times across report and timesheet
+pages, `Topbar.action` eight times. A test case with two `renderCell` functions,
+the second containing `dangerouslySetInnerHTML={{__html: p.z}}`, produced two LLM
+calls instead of three and never sent the XSS.
+
+The fix carries a per-function discriminator through the processed-marker and the
+fingerprint, using an **occurrence index** rather than the start line. That choice
+keeps markers and fingerprints byte-identical for uniquely-named functions, which
+are the overwhelming majority: inserting lines above a function changes its start
+line but not its occurrence index, so a stored scan does not re-fingerprint its
+whole corpus after an unrelated edit.
+
+Two related defects came out of the same review. `get_function_body` returned the
+first of N same-named functions, which was harmless while duplicates were never
+analysed and would have become a wrong triage verdict once they were — so it had
+to land in the same commit. And the whole-file gate ran *before* the trivial
+filter, so a config file whose only function was a one-line arrow got no coverage
+at all while still counting as parsed. Fixing that is what took whole-file units
+from 8 to 10: `src/utils/axiosHeaders.ts`, which sets the `Authorization: Bearer`
+header, and `src/services/userService.ts`, which reads and writes an access token
+in `localStorage`. Both had been reaching nothing. The selection heuristic itself
+was not touched — only when it is consulted.
+
+Final state: **354 tests**, `resumed_skipped` 0, and 1003 of 1003 units reaching
+the analysis.
+
+### Known limits, recorded deliberately
+
+Resuming against a `deepscan.db` written before this work does not re-analyse
+everything, but it can add duplicate findings for functions whose names repeat in
+one file, and the first occurrence of each such group stays skipped by its stale
+marker. The store now stamps a format version and warns on open. Deleting the
+store is the clean remedy.
+
+Because the discriminator is positional, inserting a new same-named function
+*above* an existing one transfers the old one's identity — and any verdict already
+recorded against it — to the new code. This is a narrower instance of the
+name-based identity the finding store already used, not something this work
+introduced, but it is a real limit on triage correctness across scans.
+
+On the `--guided --guide-rules semgrep` path, a Semgrep hit inside a second or
+later same-named function now yields no function body rather than the wrong one.
+That path is an explicit non-goal here and the change measures zero impact on the
+reference project, but it is a regression in kind and worth a one-line follow-up.
