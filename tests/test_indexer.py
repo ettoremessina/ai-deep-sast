@@ -1017,3 +1017,41 @@ def test_entity_shaped_text_outside_jsx_still_reports(tmp_path):
     idx = CodeIndex()
     stats = idx.build(str(f))
     assert stats["files_with_syntax_errors"] == 1
+
+
+def test_entity_after_close_paren_still_reports(tmp_path):
+    # "&bar;" cannot start a statement, so this is a real syntax error. A
+    # blacklist that forgot ')' would mask it to "if (x)xxxxx" - a valid
+    # identifier statement - and wrongly exonerate the file.
+    f = tmp_path / "close_paren.ts"
+    f.write_text("if (x)&bar;\n")
+    idx = CodeIndex()
+    stats = idx.build(str(f))
+    assert stats["files_with_syntax_errors"] == 1
+
+
+def test_entity_after_close_brace_still_reports(tmp_path):
+    # Same defect via '}' closing a block instead of ')' closing a
+    # condition: "&bar;" still cannot legally follow it.
+    f = tmp_path / "close_brace.ts"
+    f.write_text("if (x) { g(); }&bar;\n")
+    idx = CodeIndex()
+    stats = idx.build(str(f))
+    assert stats["files_with_syntax_errors"] == 1
+
+
+def test_chained_entities_in_jsx_text_are_not_a_partial_parse(tmp_path):
+    # A legitimate entity chain in real JSX text must still be masked and
+    # exonerated - guards against the whitelist being tightened later in a
+    # way that breaks real chains (e.g. uiUtils.tsx's "&#8315;&sup1;")
+    # without the suite noticing.
+    f = tmp_path / "chain.tsx"
+    f.write_text(
+        "export function Label() {\n"
+        "    return <span>x&#8315;&sup1;</span>;\n"
+        "}\n"
+    )
+    idx = CodeIndex(min_function_lines=1)
+    stats = idx.build(str(f))
+    assert [fn["name"] for fn in idx.get_all_functions()] == ["Label"]
+    assert stats["files_with_syntax_errors"] == 0

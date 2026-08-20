@@ -239,31 +239,40 @@ _ENV_READ = re.compile(r"import\.meta\.env\.([A-Za-z_][A-Za-z0-9_]*)")
 # actual proposition: does the file parse clean once those entities are gone?
 _HTML_ENTITY = re.compile(rb"&(?:#[0-9]+|#x[0-9A-Fa-f]+|[A-Za-z][A-Za-z0-9]*);")
 
-# Tokens that only ever appear in JS/TS expression position and can never be
-# immediately followed by JSX text - so an entity right after one of these
-# (skipping whitespace) is not a JSX entity at all, e.g. the '&bar;' in
-# `{ a: 1, &bar; }` sits right after a ',' and is genuinely broken syntax,
-# not an entity that masking should paper over. This is a blacklist, not a
-# whitelist: JSX text is legitimately preceded by ordinary letters/digits
-# ("mm&sup2;"), the '>' that opens an element's children ("<div>&nbsp;"),
-# another entity right before it (entities chain: "&#8315;&sup1;"), or
-# nothing (start of file) - none of those are excluded here.
-_JSX_TEXT_BREAKING_BYTES = frozenset(b"{(,=:;+-*/%<!?&|^~[.")
-
-
+# This is deliberately a whitelist, not a blacklist. An earlier version of
+# this check listed bytes that CANNOT precede JSX text (',', '{', '(', ...)
+# and was wrong twice: it omitted the closing brackets ')', '}', ']', so
+# "if (x)&bar;" - a real syntax error, since "&bar;" cannot start a
+# statement - masked to "if (x)xxxxx", a valid identifier statement, and the
+# file was wrongly exonerated. The set of bytes that cannot precede JSX text
+# is open-ended and guessing it complete is exactly how that bug happened.
+# The set that CAN precede JSX text is small and closed, so this only masks
+# an entity when the nearest non-whitespace byte before it is one of those -
+# a letter/digit (plain JSX text, "mm&sup2;"), '>' (an element's opening or
+# closing tag, "<div>&nbsp;"), or start of file. Anything unrecognised is
+# rejected and the file keeps its warning: a spurious warning on real JSX
+# this whitelist doesn't yet cover is a nuisance, but silently clearing a
+# genuinely broken file is the one outcome this whole check exists to avoid.
+# Do not loosen this without a case in tests/test_indexer.py demonstrating
+# the new byte is safe.
 def _entity_follows_jsx_text_context(source: bytes, start: int) -> bool:
-    """True unless the entity at `start` sits right after a JS/TS-only token.
+    """True when the entity at `start` sits somewhere JSX text can start.
 
     Whitespace is skipped when looking backward: JSX text can contain
     arbitrary whitespace before an entity ("foo  &nbsp;"), so what matters is
-    the nearest non-whitespace token, not the immediately adjacent byte.
+    the nearest non-whitespace byte, not the immediately adjacent one. Note
+    this does NOT accept a bare ';' - a statement-terminating semicolon must
+    not qualify. The only way a ';' predecessor is accepted is through the
+    chain rule in _mask_html_entities (a ';' that ends an entity already
+    accepted), never through this whitelist directly.
     """
     i = start - 1
     while i >= 0 and bytes([source[i]]).isspace():
         i -= 1
     if i < 0:
         return True  # start of file - only JSX text/expressions start a file
-    return source[i] not in _JSX_TEXT_BREAKING_BYTES
+    b = bytes([source[i]])
+    return b.isalnum() or b == b">"
 
 
 def _mask_html_entities(source: bytes) -> bytes:
