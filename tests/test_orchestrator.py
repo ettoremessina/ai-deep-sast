@@ -226,6 +226,49 @@ class TestIncremental:
         assert r2["phases"]["index"]["files_parsed"] == 0
 
 
+# --- Vite env findings ---
+
+class TestViteEnv:
+    """Tests for _run_vite_env storing one distinct finding per VITE_ key."""
+
+    def test_each_vite_key_gets_a_distinct_stored_finding(self, tmp_path, output_dir):
+        # Three VITE_ keys in one .env file: add_finding's fingerprint hashes
+        # (file_path, function_name, vulnerability_class), and scan_vite_env
+        # reports every key against the same .env file and vulnerability
+        # class. Without a per-key discriminator on function_name, the
+        # second and third key collapse onto the first key's fingerprint and
+        # are silently dropped as duplicates.
+        (tmp_path / ".env").write_text(
+            "VITE_API_URL=https://example.com/api\n"
+            "VITE_CLIENT_ID=abc123\n"
+            "VITE_LICENSE_KEY=super-secret-value\n"
+        )
+        (tmp_path / "config.ts").write_text(
+            "const c = {\n"
+            "    a: import.meta.env.VITE_API_URL as string,\n"
+            "};\n"
+            "export default c;\n"
+        )
+
+        orch = Orchestrator(target=str(tmp_path), output_dir=output_dir, dry_run=True)
+        orch._init_components()
+        orch.index.build(orch.target)
+
+        stats = orch._run_vite_env()
+        assert stats["keys_found"] == 3
+        assert stats["candidates_created"] == stats["keys_found"]
+
+        vite_findings = [f for f in orch.store.get_findings()
+                         if f["detection_technique"] == "vite-env"]
+        assert len(vite_findings) == 3
+
+        keys = {json.loads(f["metadata"])["key"] for f in vite_findings}
+        assert keys == {"VITE_API_URL", "VITE_CLIENT_ID", "VITE_LICENSE_KEY"}
+
+        fingerprints = {f["fingerprint"] for f in vite_findings}
+        assert len(fingerprints) == 3
+
+
 # --- CLI args ---
 
 class TestCLI:

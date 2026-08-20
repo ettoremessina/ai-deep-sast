@@ -335,6 +335,15 @@ class Orchestrator:
                 vulnerability_class="client-exposed-env-variable",
                 description=finding["description"],
                 detection_technique="vite-env",
+                # compute_fingerprint hashes (file_path, function_name,
+                # vulnerability_class) only. Without a per-key discriminator,
+                # every VITE_ key defined in the same .env file collapses onto
+                # one fingerprint and all but the first are dropped as
+                # duplicates. The key is the thing actually being reported —
+                # each one gets its own triage verdict (a public API URL is
+                # accepted, a licence key is not) — and it is stable across
+                # scans, so it is the right identity to fingerprint on.
+                function_name=finding["key"],
                 severity_tier=finding["severity_tier"],
                 cwe="CWE-200",
                 metadata={"key": finding["key"], "files": finding["files"],
