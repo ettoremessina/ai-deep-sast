@@ -347,3 +347,55 @@ class TestIndexFormatVersion:
         Orchestrator(target=scan_dir, output_dir=output_dir, dry_run=True).run()
         result = Orchestrator(target=scan_dir, output_dir=output_dir, dry_run=True).run()
         assert result["phases"]["index"]["files_skipped"] == 2
+
+
+# --- Vite env store failures (Finding 5) ---
+
+class TestViteEnvResilience:
+    """
+    _run_vite_env is the first statement of _run_detection. An unwrapped
+    sqlite failure there (locked database, disk I/O) reaches run()'s outer
+    handler and kills a multi-hour scan at minute one, before any LLM work.
+    """
+
+    @pytest.fixture
+    def env_orch(self, tmp_path, output_dir):
+        (tmp_path / ".env").write_text(
+            "VITE_API_URL=https://example.com/api\n"
+            "VITE_LICENSE_KEY=super-secret-value\n"
+        )
+        (tmp_path / "config.ts").write_text(
+            "const c = {\n"
+            "    a: import.meta.env.VITE_API_URL as string,\n"
+            "};\n"
+            "export default c;\n"
+        )
+        orch = Orchestrator(target=str(tmp_path), output_dir=output_dir, dry_run=True)
+        orch._init_components()
+        orch.index.build(orch.target)
+        return orch
+
+    def test_store_failure_degrades_to_a_warning(self, env_orch, caplog):
+        env_orch.store.add_finding = MagicMock(
+            side_effect=sqlite3.OperationalError("database is locked"))
+
+        with caplog.at_level(logging.WARNING):
+            stats = env_orch._run_vite_env()
+        assert stats["keys_found"] == 2
+        assert stats["candidates_created"] == 0
+        assert "VITE_API_URL" in caplog.text
+
+    def test_one_failure_does_not_lose_the_other_keys(self, env_orch):
+        real = env_orch.store.add_finding
+        calls = {"n": 0}
+
+        def flaky(*args, **kwargs):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise sqlite3.OperationalError("disk I/O error")
+            return real(*args, **kwargs)
+
+        env_orch.store.add_finding = flaky
+        stats = env_orch._run_vite_env()
+        assert stats["keys_found"] == 2
+        assert stats["candidates_created"] == 1

@@ -333,25 +333,36 @@ class Orchestrator:
         result["keys_found"] = len(findings)
 
         for finding in findings:
-            fid = self.store.add_finding(
-                file_path=finding["files"][0],
-                vulnerability_class="client-exposed-env-variable",
-                description=finding["description"],
-                detection_technique="vite-env",
-                # compute_fingerprint hashes (file_path, function_name,
-                # vulnerability_class) only. Without a per-key discriminator,
-                # every VITE_ key defined in the same .env file collapses onto
-                # one fingerprint and all but the first are dropped as
-                # duplicates. The key is the thing actually being reported —
-                # each one gets its own triage verdict (a public API URL is
-                # accepted, a licence key is not) — and it is stable across
-                # scans, so it is the right identity to fingerprint on.
-                function_name=finding["key"],
-                severity_tier=finding["severity_tier"],
-                cwe="CWE-200",
-                metadata={"key": finding["key"], "files": finding["files"],
-                          "use_sites": finding["use_sites"]},
-            )
+            # Per-key try, matching every add_finding in detector.py: this runs
+            # first in _run_detection, so an unwrapped sqlite failure here (a
+            # locked database, disk I/O) would reach run()'s outer handler and
+            # end a multi-hour scan before a single LLM call is made. One
+            # unrecorded env key is not worth the whole scan.
+            try:
+                fid = self.store.add_finding(
+                    file_path=finding["files"][0],
+                    vulnerability_class="client-exposed-env-variable",
+                    description=finding["description"],
+                    detection_technique="vite-env",
+                    # compute_fingerprint hashes (file_path, function_name,
+                    # vulnerability_class) only. Without a per-key discriminator,
+                    # every VITE_ key defined in the same .env file collapses onto
+                    # one fingerprint and all but the first are dropped as
+                    # duplicates. The key is the thing actually being reported —
+                    # each one gets its own triage verdict (a public API URL is
+                    # accepted, a licence key is not) — and it is stable across
+                    # scans, so it is the right identity to fingerprint on.
+                    function_name=finding["key"],
+                    severity_tier=finding["severity_tier"],
+                    cwe="CWE-200",
+                    metadata={"key": finding["key"], "files": finding["files"],
+                              "use_sites": finding["use_sites"]},
+                )
+            except Exception as e:
+                logger.warning("Could not store Vite env finding for %s: %s",
+                               finding["key"], e)
+                continue
+
             if fid:
                 result["candidates_created"] += 1
 
