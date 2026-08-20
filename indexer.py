@@ -806,20 +806,37 @@ class CodeIndex:
 
                 functions, calls = self._parser.parse_file(file_path)
 
-                if not functions and _get_language_for_file(file_path):
-                    unit = self._whole_file_unit(file_path)
-                    if unit is None:
+                # Drop trivial functions before deciding whether the file needs
+                # a whole-file unit. A vite.config.ts whose only function is a
+                # one-line `rewrite: (p) => ...` arrow has functions, so the
+                # gate below used to decline it, and then the filter removed
+                # the sole function: nothing analysed at all, reported as a
+                # cleanly parsed file.
+                substantial: List[FunctionInfo] = []
+                for func in functions:
+                    if _body_line_count(func.body) < self.min_function_lines:
+                        stats["functions_skipped_trivial"] += 1
+                        continue
+                    substantial.append(func)
+
+                if not substantial:
+                    unit = (self._whole_file_unit(file_path)
+                            if _get_language_for_file(file_path) else None)
+                    if unit is not None:
+                        self._remove_file(file_path)
+                        self._functions[unit.key] = unit
+                        self._by_name[unit.name].append(unit.key)
+                        self._by_file[file_path].append(unit.key)
+                        self._file_hashes[file_path] = content_hash
+                        stats["files_parsed"] += 1
+                        stats["whole_file_units"] += 1
+                        continue
+                    if not functions:
                         stats["files_skipped"] += 1
                         continue
-                    self._remove_file(file_path)
-                    self._functions[unit.key] = unit
-                    self._by_name[unit.name].append(unit.key)
-                    self._by_file[file_path].append(unit.key)
-                    self._file_hashes[file_path] = content_hash
-                    stats["files_parsed"] += 1
-                    stats["whole_file_units"] += 1
-                    stats["functions_found"] = len(self._functions)
-                    continue
+                    # A file left empty by the trivial filter was still read and
+                    # understood; it falls through and counts as parsed, so an
+                    # incremental re-run does not re-parse it every time.
 
                 # Remove old entries for this file before adding new ones
                 self._remove_file(file_path)
@@ -827,10 +844,7 @@ class CodeIndex:
                 # Number same-named functions in source order so every layer
                 # downstream of the index can tell them apart by name.
                 occurrences: Dict[str, int] = defaultdict(int)
-                for func in functions:
-                    if _body_line_count(func.body) < self.min_function_lines:
-                        stats["functions_skipped_trivial"] += 1
-                        continue
+                for func in substantial:
                     func.occurrence = occurrences[func.qualified_name]
                     occurrences[func.qualified_name] += 1
                     self._functions[func.key] = func

@@ -1133,6 +1133,52 @@ def test_unique_name_survives_save_and_load(duplicate_index, tmp_path):
     assert "second_helper" in reloaded.get_function_body(path, "fetch#1")
 
 
+# --- Trivial filter runs before the whole-file gate (Finding 3) ---
+
+VITE_CONFIG_ONE_TRIVIAL_FN = """\
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+    server: {
+        proxy: {
+            '/api': {
+                target: 'http://backend.internal:8080',
+                rewrite: (p) => p.replace(/^\\/api/, ''),
+            },
+        },
+    },
+});
+"""
+
+
+def test_config_whose_only_function_is_trivial_becomes_a_whole_file_unit(tmp_path):
+    # The whole-file gate used to run before the trivial filter, so a config
+    # file holding exactly one one-line arrow was neither indexed as a
+    # function nor promoted to a whole-file unit - zero coverage, reported as
+    # a cleanly parsed file.
+    (tmp_path / "vite.config.ts").write_text(VITE_CONFIG_ONE_TRIVIAL_FN)
+    idx = CodeIndex()
+    stats = idx.build(str(tmp_path))
+    assert stats["functions_skipped_trivial"] == 1
+    assert stats["whole_file_units"] == 1
+    units = idx.get_all_functions()
+    assert [u["name"] for u in units] == ["(file)"]
+    assert "backend.internal" in units[0]["body"]
+
+
+def test_all_trivial_file_that_is_not_analysable_config_is_still_parsed(tmp_path):
+    # A file left empty by the trivial filter whose content carries no config
+    # signal gets no whole-file unit, but it was read and understood: it must
+    # stay counted as parsed and hashed, not silently reclassified as skipped.
+    (tmp_path / "picks.ts").write_text("export const pick = (x) => x.id;\n")
+    idx = CodeIndex()
+    stats = idx.build(str(tmp_path))
+    assert stats["functions_skipped_trivial"] == 1
+    assert stats["whole_file_units"] == 0
+    assert stats["files_parsed"] == 1
+    assert stats["files_skipped"] == 0
+
+
 # --- Index key-format version (Finding 4) ---
 
 def test_save_stamps_the_key_format_version(index, python_file, tmp_path):
