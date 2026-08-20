@@ -265,3 +265,121 @@ individually.
 Keys repeated across the 8 environment files are the same finding at different
 sites, not 8 findings; the fingerprint must reflect the key, with the files
 listed as evidence.
+
+## Measured after implementation
+
+All seven tasks landed and were reviewed individually. This section is Task 8:
+composing them and measuring the result against `/Users/ettore/Temp/Chrono_Web`,
+the same reference project used throughout design. Full suite:
+`326 passed` (`PATH="$PWD/.venv/bin:$PATH" .venv/bin/python -m pytest tests/ -q`).
+
+| metric | predicted | measured | match |
+|---|---|---|---|
+| regular (non-whole-file) units | 993 | 993 | exact |
+| whole-file units | 9 | 8 | differs — explained below |
+| total units analysed | 993 + 9 = 1002 | 993 + 8 = 1001 | differs — same cause |
+| trivial functions skipped | 846 | 846 | exact |
+| distinct `VITE_` keys exposed | 6 | 6 | exact |
+| files with syntax errors | 0 | 0 | exact |
+
+### Why whole-file units are 8, not 9
+
+Known before this task, recorded here for the permanent record. One of the nine
+files the content heuristic selected during Task 3 development was
+`src/components/index.ts`, a pure barrel file (`export * from …`). It was
+admitted by a bug in the controller's own design-time prototype of the
+selection heuristic, not by the heuristic actually shipped in `indexer.py`.
+The shipped heuristic rejects pure re-export files by design (see section A
+above, "13 rejected as pure re-exports"), so `index.ts` is correctly excluded
+now. The 993 + 9 = 1002 figure in the brief and in "Testing" above is stale by
+exactly this one file; 993 + 8 = 1001 is the correct composed total, and every
+component number (993 regular units, 846 trivial skips) matches its
+prediction exactly. This is not a regression — it is the selection heuristic
+working as designed against a case the earlier prototype got wrong.
+
+### The 1531 → 1839 → 993 story, remeasured
+
+Three numbers describe the same codebase under three states of the code. The
+first is the documented pre-implementation baseline; the other two were
+reproduced live against the current `main`-branch code for this task, by
+toggling only `min_function_lines` (Task 2's flag) since the key-collision fix
+(Task 1) is now permanently in effect:
+
+1. **1531** — what the original scanner (key collisions present, no whole-file
+   units, no trivial filter) actually retained. `functions_found` reported 1839
+   even then, but 308 of those (17%) were silently overwritten in the
+   `self._functions` dict because same-named functions in one file shared a key
+   with no line number. Only 1531 were ever sent to the LLM. This number is
+   carried forward from the pre-implementation measurement recorded at the top
+   of this document; reproducing it exactly would require reverting the Task 1
+   fix, which is out of scope for a composed-result check.
+2. **1839** — collisions fixed (Task 1), trivial filter disabled
+   (`CodeIndex(min_function_lines=1)`), reference target rebuilt. Measured
+   directly for this task: `functions_found = 1847`, of which 8 are whole-file
+   units, leaving **1839** regular functions — an exact match to the design's
+   prediction, and now independently confirmed rather than only asserted.
+   Every one of these is now genuinely indexed and retrievable; nothing is lost
+   to key collisions.
+3. **993** — collisions fixed and the trivial filter applied at its default
+   threshold (4 non-blank body lines). Measured directly: `functions_found =
+   1001`, of which 8 are whole-file units, leaving **993** regular functions —
+   again an exact match. `1839 - 993 = 846`, the exact count of functions
+   skipped as trivial, so the arithmetic is internally consistent as well as
+   matching the prediction.
+
+Net effect: the scanner goes from silently analysing 1531 functions (with 308
+dropped and no sign of it) to deliberately analysing 993 regular functions plus
+8 whole-file units (1001 total) — fewer LLM calls than even the broken
+baseline, while every one of the 1839 functions that genuinely exist is now
+accounted for (either analysed or explicitly, countably skipped as trivial).
+Coverage strictly increased; cost still went down.
+
+### `VITE_` key count: 41 occurrences vs. 6 distinct keys
+
+The design's "Chrono_Web has 41 such keys across 8 environment files" (Problem,
+point 2) and the Testing section's "41 `VITE_` keys found across 8 files" count
+*occurrences* — a key repeated in multiple `.env*` files counts once per file.
+The Task 8 measurement counts *distinct key names*, matching the "Granularity
+of `.env` findings" design decision that one finding is emitted per key, not
+per file or per occurrence (section above, "the fingerprint must reflect the
+key, with the files listed as evidence"). The two counts are consistent, not
+contradictory: 5 of the 6 distinct keys
+(`VITE_KEYCLOAK_CLIENT_ID`, `VITE_KEYCLOAK_DEFAULT_REALM`,
+`VITE_KEYCLOAK_DEFAULT_URL`, `VITE_KEYCLOAK_REDIRECT_URL`,
+`VITE_REACT_APP_BACKEND_BASE_URL`) are defined in all 8 environment files
+(5 × 8 = 40 occurrences), and the sixth (`VITE_REACT_APP_MUI_X_LICENSE_KEY`)
+appears only in `.env` (1 occurrence) — 40 + 1 = 41, matching the original
+occurrence count exactly. `scan_vite_env` correctly deduplicates by key,
+producing 6 findings as designed.
+
+### Unaffected-target sanity check
+
+A scan target with no `.env` files and no React/Vite code should be unaffected
+by all seven changes. Built the index over this repository's own `samples/`
+directory (`SampleVuln.java`, `sample_vuln.py`, plus non-code fixtures
+`sample_secrets.env`, `sample_jdbc.properties`, `sample_app.conf` that the
+indexer does not treat as source): `files_parsed: 2, functions_found: 14,
+functions_skipped_trivial: 0, whole_file_units: 0, files_with_syntax_errors:
+0`, `scan_vite_env` returned 0 findings (the sample `.env` file has no
+`VITE_`-prefixed keys — it exists to exercise the Semgrep secrets rules, not
+this feature), and no warnings were logged during the build. No whole-file
+units, no env findings, no new warnings — the new machinery is silent on a
+target it has no business touching.
+
+### CLI surface
+
+`deepscan.py --help` lists both new flags: `--min-function-lines` (default 4,
+Task 2) and `--max-tokens` (pre-existing, unrelated to this work but confirmed
+still present alongside the new flag).
+
+### Summary
+
+Every measured number matches its prediction exactly once the known Task 3
+barrel-file correction (9 → 8 whole-file units, hence 1002 → 1001 total) is
+applied. No unexplained gaps were found. The seven tasks compose correctly:
+Task 1's unique keys make Task 2's trivial count meaningful, Task 4's rule
+feeds Task 5's pipeline wiring and produces exactly the deduplicated finding
+count the design called for, and Task 7's fix leaves `files_with_syntax_errors`
+at 0 on a target that exercises the HTML-entity case. The full test suite
+passes at 326, up from the 291 baseline named in the task brief plus the tests
+added across all seven tasks.
