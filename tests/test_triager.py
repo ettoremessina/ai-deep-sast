@@ -23,7 +23,7 @@ import pytest
 
 from finding_store import FindingStore, FindingState, Verdict
 from indexer import CodeIndex
-from triager import Triager
+from triager import Triager, MAX_CONTEXT_CHARS
 
 
 PYTHON_SAMPLE = '''\
@@ -354,3 +354,86 @@ class TestDuplicateFunctionNames:
         context = triager._build_investigation_context(store.get_finding(fid))
         assert "first_helper" in context
         assert "second_helper" not in context
+
+
+# --- Investigation context size and honesty ---
+
+# A page component that encloses the callback under investigation, plus a
+# same-named callback in an unrelated file. This is the shape that made real
+# triage prompts reach 206,000 characters.
+ENCLOSING_PAGE = '''\
+export const PageEditor = () => {
+    const rows = [];
+    const filler = "%s";
+    const onConfirmDelete = () => {
+        doDelete(rows);
+        return true;
+    };
+    return null;
+};
+''' % ("x" * 40000)
+
+UNRELATED_PAGE = '''\
+export const OtherEditor = () => {
+    const other = [];
+    const filler = "%s";
+    const onConfirmDelete = () => {
+        doDelete(other);
+        return true;
+    };
+    return null;
+};
+''' % ("y" * 40000)
+
+
+@pytest.fixture
+def big_index(tmp_path):
+    (tmp_path / "page.tsx").write_text(ENCLOSING_PAGE)
+    (tmp_path / "other.tsx").write_text(UNRELATED_PAGE)
+    idx = CodeIndex(min_function_lines=1)
+    idx.build(str(tmp_path))
+    return idx
+
+
+class TestInvestigationContextSize:
+    """The context must stay small enough to fit a real model's window."""
+
+    def _finding(self, idx, tmp_path):
+        target = [f for f in idx.list_functions_in_file(str(tmp_path / "page.tsx"))
+                  if f["name"] == "onConfirmDelete"][0]
+        return {
+            "file_path": target["file_path"],
+            "function_name": target["unique_name"],
+            "vulnerability_class": "missing-authorization",
+            "cwe": "CWE-862",
+            "description": "d",
+            "detection_technique": "exploratory",
+        }
+
+    def test_context_is_capped(self, mock_llm, store, big_index, tmp_path):
+        tri = Triager(mock_llm, big_index, store)
+        ctx = tri._build_investigation_context(self._finding(big_index, tmp_path))
+        assert len(ctx) <= MAX_CONTEXT_CHARS, (
+            "context was %d chars; real prompts reached 206000 and exceeded the "
+            "model window by 3x" % len(ctx))
+
+    def test_enclosing_caller_is_not_included(self, mock_llm, store, big_index, tmp_path):
+        """The function that contains the callback is the file, not extra context."""
+        tri = Triager(mock_llm, big_index, store)
+        ctx = tri._build_investigation_context(self._finding(big_index, tmp_path))
+        assert "x" * 1000 not in ctx, "the enclosing page body must not be attached"
+
+    def test_own_body_survives_the_cap(self, mock_llm, store, big_index, tmp_path):
+        """Trimming context must never cost the code under investigation."""
+        tri = Triager(mock_llm, big_index, store)
+        ctx = tri._build_investigation_context(self._finding(big_index, tmp_path))
+        assert "doDelete(rows)" in ctx
+
+    def test_name_matched_callers_are_labelled_as_such(self, mock_llm, store, big_index, tmp_path):
+        """The call graph is keyed by name, so callers are guesses, not facts."""
+        tri = Triager(mock_llm, big_index, store)
+        ctx = tri._build_investigation_context(self._finding(big_index, tmp_path))
+        if "OtherEditor" in ctx or "Possible callers" in ctx:
+            assert "matched by name" in ctx.lower(), (
+                "callers matched only by name must say so, or the model treats "
+                "an unrelated file as a confirmed call site")

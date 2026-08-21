@@ -50,6 +50,49 @@ logger = logging.getLogger(__name__)
 
 # --- Prompts ---
 
+# Ceiling on the investigation context sent with one finding. Without it a
+# single triage prompt reached 206,000 characters on a real React project —
+# three times the model's whole context window — because the "callers" of a
+# 409-character callback were three 50-80k page components. The finding's own
+# body and metadata are added before the budget is consumed, so trimming costs
+# context, never the code under investigation.
+MAX_CONTEXT_CHARS = 12000
+
+# One attached body. Even a legitimate caller can be a 1500-line component, and
+# the first part of a function carries its signature and guards — the parts that
+# matter for judging reachability.
+MAX_SNIPPET_CHARS = 2000
+
+
+def _encloses(caller: Dict[str, Any], target: Optional[Dict[str, Any]]) -> bool:
+    """True when the caller physically contains the target function.
+
+    A nested callback's "caller" is the component it lives in, so attaching that
+    body re-sends the whole file to explain a few lines inside it.
+    """
+    if not target or caller.get("file_path") != target.get("file_path"):
+        return False
+    return (caller.get("start_line", 0) <= target.get("start_line", 0)
+            and caller.get("end_line", 0) >= target.get("end_line", 0))
+
+
+def _bodies_within_budget(entries, budget: int) -> Tuple[List[str], int]:
+    """Format (name, path, body) triples, truncating to stay inside budget."""
+    out: List[str] = []
+    for name, path, body in entries:
+        if not body or budget <= 0:
+            continue
+        snippet = body[:MAX_SNIPPET_CHARS]
+        if len(snippet) < len(body):
+            snippet += "\n… (truncated, %d more characters)" % (len(body) - len(snippet))
+        block = "#### %s (%s)\n```\n%s\n```" % (name, path, snippet)
+        if len(block) > budget:
+            continue
+        out.append(block)
+        budget -= len(block)
+    return out, budget
+
+
 TRIAGE_SYSTEM_PROMPT = """\
 You are a security vulnerability triager. You are given a candidate finding \
 (a potential vulnerability) along with the function code, its callers, callees, \
@@ -228,36 +271,42 @@ class Triager:
             if body:
                 parts.append(f"\n### Function Body:\n```\n{body}\n```")
 
+            target = self.index.find_function(file_path, func_name)
+            budget = MAX_CONTEXT_CHARS - sum(len(p) for p in parts)
+
             # Get callers
-            callers = self.index.get_callers(simple_name)
+            callers = [c for c in self.index.get_callers(simple_name)
+                       if not _encloses(c, target)]
             if callers:
-                caller_bodies = []
-                for c in callers[:3]:  # Top 3 callers
-                    cb = self.index.get_function_body(
-                        c.get("file_path", ""), c.get("name", "")
-                    )
-                    if cb:
-                        caller_bodies.append(
-                            f"#### {c.get('qualified_name', c.get('name', '?'))} "
-                            f"({c.get('file_path', '?')})\n```\n{cb}\n```"
-                        )
+                caller_bodies, budget = _bodies_within_budget(
+                    ((c.get("qualified_name") or c.get("name", "?"),
+                      c.get("file_path", "?"),
+                      self.index.get_function_body(c.get("file_path", ""),
+                                                   c.get("name", "")))
+                     for c in callers[:3]),
+                    budget)
                 if caller_bodies:
-                    parts.append(f"\n### Callers:\n" + "\n".join(caller_bodies))
+                    # The call graph is keyed by callee NAME, so these are every
+                    # function calling *something* with this name — not verified
+                    # call sites. Saying so stops the model treating an unrelated
+                    # file as proof the code is reachable.
+                    parts.append("\n### Possible callers (matched by name, "
+                                 "may include unrelated functions):\n"
+                                 + "\n".join(caller_bodies))
 
             # Get callees
             callees = (self.index.get_callees(file_path, func_name)
                        or self.index.get_callees(file_path, simple_name))
             if callees:
-                callee_bodies = []
-                for callee_name in callees[:5]:
-                    symbols = self.index.find_symbol(callee_name)
-                    for s in symbols[:1]:
-                        callee_bodies.append(
-                            f"#### {s.get('qualified_name', callee_name)} "
-                            f"({s.get('file_path', '?')})\n```\n{s.get('body', '?')}\n```"
-                        )
+                callee_bodies, budget = _bodies_within_budget(
+                    ((s.get("qualified_name") or name, s.get("file_path", "?"),
+                      s.get("body", ""))
+                     for name in callees[:5]
+                     for s in self.index.find_symbol(name)[:1]),
+                    budget)
                 if callee_bodies:
-                    parts.append(f"\n### Callees:\n" + "\n".join(callee_bodies))
+                    parts.append("\n### Possible callees (matched by name):\n"
+                                 + "\n".join(callee_bodies))
 
         # Security map context
         if self.security_map:

@@ -1012,6 +1012,16 @@ class CodeIndex:
         keys = self._by_file.get(file_path, [])
         return [self._functions[k].to_dict() for k in keys if k in self._functions]
 
+    def find_function(self, file_path: str, function_name: str) -> Optional[Dict[str, Any]]:
+        """One function by name within a file, or None.
+
+        Accepts a plain, qualified or discriminated name, and returns the whole
+        record — callers need its line span to tell an enclosing function from a
+        genuinely separate one.
+        """
+        func = self._resolve(file_path, function_name)
+        return func.to_dict() if func else None
+
     def full_text_search(self, query: str, case_sensitive: bool = False) -> List[Dict[str, Any]]:
         """Search function bodies for a text pattern (FR-022)."""
         results = []
